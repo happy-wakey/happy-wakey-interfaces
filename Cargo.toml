@@ -1,0 +1,20 @@
+[package]
+name = "happy-wakey-interfaces"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Static Rust types and transport interfaces for Happy Wakey"
+license = "MIT"
+repository = "https://github.com/happy-wakey/happy-wakey-interfaces"
+
+[dependencies]
+schemars = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+jsonschema = "0.33"
+
+[lints.rust]
+unsafe_code = "forbid"
+

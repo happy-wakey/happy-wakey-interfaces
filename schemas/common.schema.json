@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/common.schema.json",
+  "title": "Happy Wakey common definitions",
+  "$defs": {
+    "uuid": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "generation": { "type": "integer", "minimum": 0 },
+    "transition_id": { "type": "string", "format": "uuid" },
+    "cursor": { "type": "string", "pattern": "^[0-9]+$" },
+    "api_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable", "trace_id"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,63}$" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "retryable": { "type": "boolean" },
+        "trace_id": { "type": ["string", "null"], "pattern": "^[0-9a-f]{32}$" }
+      }
+    }
+  }
+}
+

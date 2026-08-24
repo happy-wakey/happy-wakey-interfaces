@@ -1,0 +1,13 @@
+{
+  "id": "44dc2d90-1d66-4698-ac51-a7c855e147b5",
+  "alarm_id": "2d9f2f52-1a12-4b74-b7b8-56effa702131",
+  "scheduled_for": "2026-08-25T11:45:00Z",
+  "state": "scheduled",
+  "generation": 0,
+  "active_transition_id": null,
+  "snooze_until": null,
+  "acknowledged_at": null,
+  "completed_at": null,
+  "updated_at": "2026-08-24T11:05:00Z"
+}
+

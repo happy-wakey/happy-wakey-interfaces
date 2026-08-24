@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/app-snapshot.schema.json",
+  "title": "Happy Wakey app machine snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["app_phase", "auth_phase", "auth_generation", "auth_token", "onboarding", "onboarding_completed_once", "generation", "lanes"],
+  "properties": {
+    "app_phase": { "enum": ["booting", "ready"] },
+    "auth_phase": { "enum": ["signed_out", "authenticating", "signed_in", "failed"] },
+    "auth_generation": { "$ref": "common.schema.json#/$defs/generation" },
+    "auth_token": { "anyOf": [{ "$ref": "common.schema.json#/$defs/generation" }, { "type": "null" }] },
+    "onboarding": { "enum": ["welcome", "account", "backup", "essentials", "ready", "complete"] },
+    "onboarding_completed_once": { "type": "boolean" },
+    "generation": { "$ref": "common.schema.json#/$defs/generation" },
+    "lanes": {
+      "type": "object",
+      "propertyNames": { "enum": ["calendar", "weather", "stocks", "news", "onboarding_hydration", "desktop_notification", "cloud_notification", "cloud_reminder_sync"] },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phase", "generation", "active_token"],
+        "properties": {
+          "phase": { "enum": ["idle", "running", "ready", "failed"] },
+          "generation": { "$ref": "common.schema.json#/$defs/generation" },
+          "active_token": { "anyOf": [{ "$ref": "common.schema.json#/$defs/generation" }, { "type": "null" }] }
+        }
+      }
+    }
+  }
+}
+

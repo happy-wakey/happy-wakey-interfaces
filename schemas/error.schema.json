@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/error.schema.json",
+  "title": "Happy Wakey API error",
+  "$ref": "common.schema.json#/$defs/api_error"
+}
+

@@ -1,0 +1,19 @@
+{
+  "schema": "happy-wakey/sync/v1",
+  "cursor": "42",
+  "changes": [
+    {
+      "change_id": "4a604364-4927-4cf1-8052-24bb761caa44",
+      "scope": "user_123",
+      "collection": "alarms",
+      "entity_id": "2d9f2f52-1a12-4b74-b7b8-56effa702131",
+      "operation": "upsert",
+      "generation": 4,
+      "actor_id": "iphone-13-pro",
+      "document": { "label": "Weekday wake-up", "enabled": true },
+      "occurred_at": "2026-08-24T11:05:00Z"
+    }
+  ],
+  "has_more": false
+}
+

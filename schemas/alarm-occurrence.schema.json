@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/alarm-occurrence.schema.json",
+  "title": "Happy Wakey alarm occurrence",
+  "$defs": {
+    "state": { "enum": ["scheduled", "firing", "acknowledged", "snoozed", "completed", "missed", "canceled"] },
+    "event": { "enum": ["fire", "acknowledge", "snooze", "complete", "mark_missed", "cancel"] },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "alarm_id", "scheduled_for", "state", "generation", "active_transition_id", "snooze_until", "acknowledged_at", "completed_at", "updated_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "alarm_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "scheduled_for": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "state": { "$ref": "#/$defs/state" },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "active_transition_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/transition_id" }, { "type": "null" }] },
+        "snooze_until": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "acknowledged_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "completed_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "transition_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transition_id", "expected_generation", "event", "snooze_until", "client_time"],
+      "properties": {
+        "transition_id": { "$ref": "common.schema.json#/$defs/transition_id" },
+        "expected_generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "event": { "$ref": "#/$defs/event" },
+        "snooze_until": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "client_time": { "$ref": "common.schema.json#/$defs/timestamp" }
+      },
+      "allOf": [
+        { "if": { "properties": { "event": { "const": "snooze" } } }, "then": { "properties": { "snooze_until": { "$ref": "common.schema.json#/$defs/timestamp" } } } },
+        { "if": { "properties": { "event": { "enum": ["fire", "acknowledge", "complete", "mark_missed", "cancel"] } } }, "then": { "properties": { "snooze_until": { "type": "null" } } } }
+      ]
+    },
+    "transition_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "occurrence", "error"],
+      "properties": {
+        "disposition": { "enum": ["applied", "stale", "rejected"] },
+        "occurrence": { "$ref": "#/$defs/occurrence" },
+        "error": { "anyOf": [{ "$ref": "common.schema.json#/$defs/api_error" }, { "type": "null" }] }
+      }
+    }
+  },
+  "$ref": "#/$defs/occurrence"
+}
+

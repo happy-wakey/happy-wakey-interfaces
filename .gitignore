@@ -1,0 +1,6 @@
+/target/
+/.zed/
+/.zpkg-pack/
+*.log
+.DS_Store
+

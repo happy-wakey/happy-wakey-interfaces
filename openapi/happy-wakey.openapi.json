@@ -1,0 +1,59 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Happy Wakey API",
+    "version": "0.1.0",
+    "description": "Contract-first alarm, occurrence, state, and synchronization API. All /v1 routes require a Shared Auth bearer token."
+  },
+  "servers": [{ "url": "https://api.happy-wakey.dev" }],
+  "security": [{ "sharedAuth": [] }],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "security": [],
+        "operationId": "health",
+        "responses": { "200": { "description": "Healthy", "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "const": "ok" } } } } } } }
+      }
+    },
+    "/v1/alarms": {
+      "get": {
+        "operationId": "listAlarms",
+        "responses": { "200": { "description": "Owner alarms", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "../schemas/alarm.schema.json#/$defs/alarm" } } } } }, "default": { "$ref": "#/components/responses/Error" } }
+      },
+      "post": {
+        "operationId": "createAlarm",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "../schemas/alarm.schema.json#/$defs/create_alarm" } } } },
+        "responses": { "201": { "description": "Created idempotently", "content": { "application/json": { "schema": { "$ref": "../schemas/alarm.schema.json#/$defs/alarm" } } } }, "default": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/v1/occurrences/{occurrence_id}/transitions": {
+      "post": {
+        "operationId": "transitionOccurrence",
+        "parameters": [{ "name": "occurrence_id", "in": "path", "required": true, "schema": { "$ref": "../schemas/common.schema.json#/$defs/uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "../schemas/alarm-occurrence.schema.json#/$defs/transition_request" } } } },
+        "responses": { "200": { "description": "Applied, stale, or rejected transition", "content": { "application/json": { "schema": { "$ref": "../schemas/alarm-occurrence.schema.json#/$defs/transition_response" } } } }, "default": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/v1/sync/pull": {
+      "get": {
+        "operationId": "pullChanges",
+        "parameters": [
+          { "name": "cursor", "in": "query", "required": false, "schema": { "$ref": "../schemas/common.schema.json#/$defs/cursor", "default": "0" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 } }
+        ],
+        "responses": { "200": { "description": "Ordered changes", "content": { "application/json": { "schema": { "$ref": "../schemas/sync-envelope.schema.json" } } } }, "default": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/v1/sync/push": {
+      "post": {
+        "operationId": "pushChanges",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "array", "maxItems": 500, "items": { "$ref": "../schemas/sync-envelope.schema.json#/$defs/change" } } } } },
+        "responses": { "200": { "description": "Accepted changes and authoritative cursor", "content": { "application/json": { "schema": { "$ref": "../schemas/sync-envelope.schema.json" } } } }, "default": { "$ref": "#/components/responses/Error" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "sharedAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" } },
+    "responses": { "Error": { "description": "Controlled error", "content": { "application/json": { "schema": { "$ref": "../schemas/error.schema.json" } } } } }
+  }
+}

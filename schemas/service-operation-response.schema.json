@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/service-operation-response.schema.json",
+  "title": "Happy Wakey service operation response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "operation_id", "status", "alarms", "error"],
+  "properties": {
+    "schema": { "const": "happy-wakey.service-operation.response.v1" },
+    "operation_id": { "$ref": "common.schema.json#/$defs/uuid" },
+    "status": { "enum": ["ok", "unauthorized", "unavailable", "invalid"] },
+    "alarms": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": { "$ref": "alarm.schema.json#/$defs/alarm" }
+    },
+    "error": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/api_error" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

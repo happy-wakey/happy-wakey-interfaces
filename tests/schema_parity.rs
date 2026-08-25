@@ -1,6 +1,7 @@
 use happy_wakey_interfaces::{
-    Alarm, AlarmOccurrence, AppSnapshot, CreateAlarmRequest, SyncEnvelope, TransitionAlarmRequest,
-    TransitionAlarmResponse,
+    Alarm, AlarmOccurrence, AppSnapshot, AsyncOperationAccepted, AsyncOperationRequest,
+    AsyncOperationSignal, CreateAlarmRequest, ServiceOperationRequest, ServiceOperationResponse,
+    SyncEnvelope, TransitionAlarmRequest, TransitionAlarmResponse,
 };
 use schemars::schema_for;
 
@@ -10,7 +11,12 @@ fn every_public_wire_type_has_a_generated_schema() {
         schema_for!(Alarm),
         schema_for!(AlarmOccurrence),
         schema_for!(AppSnapshot),
+        schema_for!(AsyncOperationAccepted),
+        schema_for!(AsyncOperationRequest),
+        schema_for!(AsyncOperationSignal),
         schema_for!(CreateAlarmRequest),
+        schema_for!(ServiceOperationRequest),
+        schema_for!(ServiceOperationResponse),
         schema_for!(SyncEnvelope),
         schema_for!(TransitionAlarmRequest),
         schema_for!(TransitionAlarmResponse),

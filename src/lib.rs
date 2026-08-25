@@ -217,6 +217,78 @@ pub struct ApiError {
     pub trace_id: Option<String>,
 }
 
+/// Transport-neutral operations supported by the web-to-API service lanes.
+///
+/// Direct database access implements only this read operation. HTTPS, bounded
+/// persistent TLS, and JetStream carry the same request and response types.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ServiceOperation {
+    ListAlarms,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ServiceOperationStatus {
+    Ok,
+    Unauthorized,
+    Unavailable,
+    Invalid,
+}
+
+/// A single independently authenticated operation.
+///
+/// `operation_id` is an RFC 4122 UUID used for JetStream message de-duplication
+/// and durable response correlation. The bearer is sensitive runtime data and
+/// must never enter telemetry, persistence, or a dead-letter payload.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ServiceOperationRequest {
+    pub schema: String,
+    pub operation_id: String,
+    pub bearer_token: String,
+    pub operation: ServiceOperation,
+}
+
+/// Body used to register an asynchronous operation over authenticated HTTPS.
+/// The bearer remains in the HTTP authorization header and is never copied
+/// into this durable record.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationRequest {
+    pub schema: String,
+    pub operation_id: String,
+    pub operation: ServiceOperation,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationAccepted {
+    pub schema: String,
+    pub operation_id: String,
+    pub response_subject: String,
+}
+
+/// Credential-free JetStream wake-up for a previously authenticated outbox
+/// row. The API derives the verified owner only from that row.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationSignal {
+    pub schema: String,
+    pub operation_id: String,
+}
+
+/// Canonical result shared by the persistent TLS and JetStream lanes.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ServiceOperationResponse {
+    pub schema: String,
+    pub operation_id: String,
+    pub status: ServiceOperationStatus,
+    pub alarms: Vec<Alarm>,
+    pub error: Option<ApiError>,
+}
+
 /// Persistence boundary implemented by the API service, never by this crate.
 pub trait AlarmRepository: Send + Sync {
     type Error: Send + Sync + 'static;

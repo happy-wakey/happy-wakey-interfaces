@@ -52,6 +52,7 @@ for required in (
     "happy_wakey_alarm_occurrences",
     "happy_wakey_transition_receipts",
     "happy_wakey_sync_changes",
+    "happy_wakey_async_operations",
 ):
     assert required in sql
 

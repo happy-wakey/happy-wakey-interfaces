@@ -250,6 +250,34 @@ pub struct ServiceOperationRequest {
     pub operation: ServiceOperation,
 }
 
+/// Body used to register an asynchronous operation over authenticated HTTPS.
+/// The bearer remains in the HTTP authorization header and is never copied
+/// into this durable record.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationRequest {
+    pub schema: String,
+    pub operation_id: String,
+    pub operation: ServiceOperation,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationAccepted {
+    pub schema: String,
+    pub operation_id: String,
+    pub response_subject: String,
+}
+
+/// Credential-free JetStream wake-up for a previously authenticated outbox
+/// row. The API derives the verified owner only from that row.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AsyncOperationSignal {
+    pub schema: String,
+    pub operation_id: String,
+}
+
 /// Canonical result shared by the persistent TLS and JetStream lanes.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

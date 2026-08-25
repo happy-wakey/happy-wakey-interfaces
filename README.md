@@ -28,13 +28,15 @@ never be collapsed into one set of booleans.
 
 - Unknown enum values and undeclared fields fail schema validation.
 - Every mutating request carries an idempotency `transition_id`.
-- Persistent TLS and JetStream use the same `ServiceOperationRequest` and
-  `ServiceOperationResponse` declarations. Each operation carries a UUID,
-  re-authenticates its bearer independently, and currently exposes only the
-  read-only `list_alarms` operation.
+- Persistent TLS uses `ServiceOperationRequest` and re-authenticates the bearer
+  on every frame. The asynchronous lane registers an `AsyncOperationRequest`
+  over authenticated HTTPS, persists only its verified owner and operation,
+  and sends a credential-free `AsyncOperationSignal` through JetStream. Both
+  lanes return the same `ServiceOperationResponse` and currently expose only
+  the read-only `list_alarms` operation.
 - A service operation bearer is transient authorization data: it must remain
-  inside the bounded encrypted request and must never enter telemetry,
-  persistence, response streams, or dead-letter payloads.
+  inside the bounded encrypted request and must never enter telemetry, the
+  asynchronous outbox, JetStream, response streams, or dead-letter payloads.
 - Every occurrence transition carries `expected_generation`; stale callers
   stutter and cannot overwrite a newer state.
 - Invalid state/event pairs are rejected without mutation.

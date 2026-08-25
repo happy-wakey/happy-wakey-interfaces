@@ -28,6 +28,13 @@ never be collapsed into one set of booleans.
 
 - Unknown enum values and undeclared fields fail schema validation.
 - Every mutating request carries an idempotency `transition_id`.
+- Persistent TLS and JetStream use the same `ServiceOperationRequest` and
+  `ServiceOperationResponse` declarations. Each operation carries a UUID,
+  re-authenticates its bearer independently, and currently exposes only the
+  read-only `list_alarms` operation.
+- A service operation bearer is transient authorization data: it must remain
+  inside the bounded encrypted request and must never enter telemetry,
+  persistence, response streams, or dead-letter payloads.
 - Every occurrence transition carries `expected_generation`; stale callers
   stutter and cannot overwrite a newer state.
 - Invalid state/event pairs are rejected without mutation.
@@ -57,4 +64,3 @@ npx --yes --package=@informalsystems/quint@0.32.0 quint run \
 Formal verification proves the declared finite abstraction and checked bound,
 not clocks, operating systems, notification providers, networks, or hardware.
 Those failures return as controlled events and remain fenced by generation.
-

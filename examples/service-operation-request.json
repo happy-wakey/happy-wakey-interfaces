@@ -1,0 +1,6 @@
+{
+  "schema": "happy-wakey.service-operation.request.v1",
+  "operation_id": "018f5cc6-6d8b-7b2a-9f38-269e6a7b1f11",
+  "bearer_token": "synthetic.test.token",
+  "operation": "list_alarms"
+}

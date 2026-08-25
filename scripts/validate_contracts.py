@@ -24,6 +24,8 @@ for document in schema_docs:
 fixtures = {
     "alarm.schema.json": ROOT / "examples/alarm.json",
     "alarm-occurrence.schema.json": ROOT / "examples/alarm-occurrence.json",
+    "service-operation-request.schema.json": ROOT / "examples/service-operation-request.json",
+    "service-operation-response.schema.json": ROOT / "examples/service-operation-response.json",
     "sync-envelope.schema.json": ROOT / "examples/sync-envelope.json",
 }
 for schema_name, fixture_path in fixtures.items():
@@ -54,4 +56,3 @@ for required in (
     assert required in sql
 
 print(f"validated {len(schema_docs)} Draft 2020-12 schemas, {len(fixtures)} fixtures, {len(operation_ids)} operations, and declarative SQL")
-

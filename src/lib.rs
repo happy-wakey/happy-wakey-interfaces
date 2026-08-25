@@ -38,6 +38,7 @@ pub enum OperationLane {
     DesktopNotification,
     CloudNotification,
     CloudReminderSync,
+    Bluetooth,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]

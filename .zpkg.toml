@@ -1,0 +1,24 @@
+[package]
+org = "happy-wakey"
+name = "happy-wakey-interfaces"
+version = "0.1.0"
+description = "Canonical Happy Wakey contracts, schemas, and formal specifications"
+license = "MIT"
+keywords = ["alarms", "contracts", "json-schema", "quint", "sync"]
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/happy-wakey/happy-wakey-interfaces"
+
+[publish]
+include_readme = true
+tag_format = "v{version}"
+exclude = [".env", ".env.*", "target/**", "tmp/**", "**/*.log", ".DS_Store"]
+smoke_test = "test -f \"$ZED_PKG_TEST_TARGET/schemas/alarm.schema.json\" && test -f \"$ZED_PKG_TEST_TARGET/openapi/happy-wakey.openapi.json\""
+
+[targets.repository]
+dir = "."
+adapter = "rust"
+
+[scripts]
+test = "python3 scripts/validate_contracts.py && cargo test --all-targets --locked"

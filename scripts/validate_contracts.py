@@ -22,6 +22,7 @@ for document in schema_docs:
     registry = registry.with_resource(document["$id"], Resource.from_contents(document))
 
 fixtures = {
+    "app-snapshot.schema.json": ROOT / "examples/app-snapshot.json",
     "alarm.schema.json": ROOT / "examples/alarm.json",
     "alarm-occurrence.schema.json": ROOT / "examples/alarm-occurrence.json",
     "service-operation-request.schema.json": ROOT / "examples/service-operation-request.json",

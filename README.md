@@ -24,6 +24,11 @@ services and clients cannot invent a second representation. The independent
 suspended while an occurrence is still scheduled, so the two machines must
 never be collapsed into one set of booleans.
 
+The app snapshot exposes nine effect lanes, including `bluetooth`. That lane
+governs scan, connect, disconnect, and preview-command effects in both desktop
+implementations; it does not put device identifiers or credentials into sync
+or API payloads.
+
 ## Safety rules
 
 - Unknown enum values and undeclared fields fail schema validation.

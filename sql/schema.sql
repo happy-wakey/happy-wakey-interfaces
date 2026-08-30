@@ -55,7 +55,9 @@ CREATE TABLE IF NOT EXISTS happy_wakey_transition_receipts (
   disposition TEXT NOT NULL,
   response JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
-  CONSTRAINT happy_wakey_transition_disposition CHECK (disposition IN ('applied','stale','rejected'))
+  -- `pending` is an internal, transactional claim. It is never returned in the
+  -- public TransitionDisposition enum and cannot survive a rolled-back write.
+  CONSTRAINT happy_wakey_transition_disposition CHECK (disposition IN ('pending','applied','stale','rejected'))
 );
 
 CREATE TABLE IF NOT EXISTS happy_wakey_sync_changes (

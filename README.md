@@ -24,10 +24,24 @@ services and clients cannot invent a second representation. The independent
 suspended while an occurrence is still scheduled, so the two machines must
 never be collapsed into one set of booleans.
 
+The app snapshot exposes nine effect lanes, including `bluetooth`. That lane
+governs scan, connect, disconnect, and preview-command effects in both desktop
+implementations; it does not put device identifiers or credentials into sync
+or API payloads.
+
 ## Safety rules
 
 - Unknown enum values and undeclared fields fail schema validation.
 - Every mutating request carries an idempotency `transition_id`.
+- Persistent TLS uses `ServiceOperationRequest` and re-authenticates the bearer
+  on every frame. The asynchronous lane registers an `AsyncOperationRequest`
+  over authenticated HTTPS, persists only its verified owner and operation,
+  and sends a credential-free `AsyncOperationSignal` through JetStream. Both
+  lanes return the same `ServiceOperationResponse` and currently expose only
+  the read-only `list_alarms` operation.
+- A service operation bearer is transient authorization data: it must remain
+  inside the bounded encrypted request and must never enter telemetry, the
+  asynchronous outbox, JetStream, response streams, or dead-letter payloads.
 - Every occurrence transition carries `expected_generation`; stale callers
   stutter and cannot overwrite a newer state.
 - Invalid state/event pairs are rejected without mutation.
@@ -57,4 +71,3 @@ npx --yes --package=@informalsystems/quint@0.32.0 quint run \
 Formal verification proves the declared finite abstraction and checked bound,
 not clocks, operating systems, notification providers, networks, or hardware.
 Those failures return as controlled events and remain fenced by generation.
-

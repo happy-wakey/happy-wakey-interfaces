@@ -1,0 +1,20 @@
+{
+  "app_phase": "ready",
+  "auth_phase": "signed_in",
+  "auth_generation": 4,
+  "auth_token": null,
+  "onboarding": "complete",
+  "onboarding_completed_once": true,
+  "generation": 12,
+  "lanes": {
+    "calendar": { "phase": "ready", "generation": 3, "active_token": null },
+    "weather": { "phase": "idle", "generation": 0, "active_token": null },
+    "stocks": { "phase": "idle", "generation": 0, "active_token": null },
+    "news": { "phase": "idle", "generation": 0, "active_token": null },
+    "onboarding_hydration": { "phase": "ready", "generation": 1, "active_token": null },
+    "desktop_notification": { "phase": "idle", "generation": 0, "active_token": null },
+    "cloud_notification": { "phase": "idle", "generation": 0, "active_token": null },
+    "cloud_reminder_sync": { "phase": "ready", "generation": 2, "active_token": null },
+    "bluetooth": { "phase": "running", "generation": 6, "active_token": 6 }
+  }
+}

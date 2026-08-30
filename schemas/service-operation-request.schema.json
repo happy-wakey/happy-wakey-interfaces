@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/service-operation-request.schema.json",
+  "title": "Happy Wakey authenticated service operation request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "operation_id", "bearer_token", "operation"],
+  "properties": {
+    "schema": { "const": "happy-wakey.service-operation.request.v1" },
+    "operation_id": { "$ref": "common.schema.json#/$defs/uuid" },
+    "bearer_token": { "type": "string", "minLength": 1, "maxLength": 16384 },
+    "operation": { "const": "list_alarms" }
+  }
+}

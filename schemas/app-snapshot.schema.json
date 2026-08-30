@@ -15,7 +15,7 @@
     "generation": { "$ref": "common.schema.json#/$defs/generation" },
     "lanes": {
       "type": "object",
-      "propertyNames": { "enum": ["calendar", "weather", "stocks", "news", "onboarding_hydration", "desktop_notification", "cloud_notification", "cloud_reminder_sync"] },
+      "propertyNames": { "enum": ["calendar", "weather", "stocks", "news", "onboarding_hydration", "desktop_notification", "cloud_notification", "cloud_reminder_sync", "bluetooth"] },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -29,4 +29,3 @@
     }
   }
 }
-

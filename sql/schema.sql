@@ -78,3 +78,23 @@ CREATE TABLE IF NOT EXISTS happy_wakey_sync_changes (
 
 CREATE INDEX IF NOT EXISTS happy_wakey_sync_scope_sequence
   ON happy_wakey_sync_changes (scope, sequence);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_async_operations (
+  operation_id UUID PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  response JSONB NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  completed_at TIMESTAMPTZ NULL,
+  CONSTRAINT happy_wakey_async_operation_kind CHECK (operation IN ('list_alarms')),
+  CONSTRAINT happy_wakey_async_operation_status CHECK (status IN ('pending','completed')),
+  CONSTRAINT happy_wakey_async_operation_response CHECK (
+    (status = 'pending' AND response IS NULL AND completed_at IS NULL)
+    OR (status = 'completed' AND response IS NOT NULL AND completed_at IS NOT NULL)
+  )
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_async_operations_pending
+  ON happy_wakey_async_operations (status, expires_at, created_at);

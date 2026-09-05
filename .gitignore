@@ -1,4 +1,5 @@
 /target/
+/node_modules/
 /.zed/
 /.zpkg-pack/
 *.log
@@ -14,4 +15,3 @@ env/dec
 env/dec/
 /env/dec/
 # END ores-sops dotenv policy
-

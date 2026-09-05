@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -28,6 +29,7 @@ fixtures = {
     "service-operation-request.schema.json": ROOT / "examples/service-operation-request.json",
     "service-operation-response.schema.json": ROOT / "examples/service-operation-response.json",
     "sync-envelope.schema.json": ROOT / "examples/sync-envelope.json",
+    "morning-briefing.schema.json": ROOT / "examples/morning-briefing.json",
 }
 for schema_name, fixture_path in fixtures.items():
     schema = load(SCHEMAS / schema_name)
@@ -47,6 +49,38 @@ for path_item in openapi["paths"].values():
 assert len(operation_ids) == len(set(operation_ids)), "duplicate operationId"
 assert {"health", "listAlarms", "createAlarm", "transitionOccurrence", "pullChanges", "pushChanges"} == set(operation_ids)
 
+briefing_schema = load(SCHEMAS / "morning-briefing.schema.json")
+type_spec = (ROOT / "typespec/main.tsp").read_text(encoding="utf-8")
+type_spec_models = set(re.findall(r"^model\s+([A-Za-z][A-Za-z0-9_]*)", type_spec, re.MULTILINE))
+peer_models = {
+    "OnboardingIntent",
+    "AccountContext",
+    "ConnectorConsent",
+    "SourceItemCandidate",
+    "UsefulnessDecision",
+    "SafeDeepLink",
+    "BriefingCard",
+    "MorningBriefing",
+    "EmbeddingDescriptor",
+    "CorrelationFinding",
+    "RealtimeEnvelope",
+    "ChatSession",
+}
+assert peer_models <= set(briefing_schema["$defs"]), "JSON Schema authority is missing peer models"
+assert peer_models <= type_spec_models, "TypeSpec authority is missing peer models"
+assert briefing_schema["$defs"]["SafeDeepLink"]["properties"]["feedFallbackAllowed"]["const"] is False
+assert briefing_schema["$defs"]["EmbeddingDescriptor"]["properties"]["dimensions"]["maximum"] == 4100
+
+generated_files = (
+    ROOT / "generated/json-schema/types.d.ts",
+    ROOT / "generated/json-schema/validator.cjs",
+    ROOT / "generated/typespec/types.ts",
+    ROOT / "generated/typespec/validator.cjs",
+    ROOT / "generated/typespec/protobuf/@typespec/protobuf/main.proto",
+    ROOT / "generated/provenance.json",
+)
+assert all(path.is_file() and path.stat().st_size > 0 for path in generated_files)
+
 sql = (ROOT / "sql/schema.sql").read_text(encoding="utf-8")
 for required in (
     "happy_wakey_alarms",
@@ -57,4 +91,8 @@ for required in (
 ):
     assert required in sql
 
-print(f"validated {len(schema_docs)} Draft 2020-12 schemas, {len(fixtures)} fixtures, {len(operation_ids)} operations, and declarative SQL")
+print(
+    f"validated {len(schema_docs)} Draft 2020-12 schemas, {len(fixtures)} fixtures, "
+    f"{len(operation_ids)} operations, {len(peer_models)} peer-source briefing models, "
+    "generated validators, Protobuf, and declarative SQL"
+)

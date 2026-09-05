@@ -1,7 +1,9 @@
 use happy_wakey_interfaces::{
     Alarm, AlarmOccurrence, AppSnapshot, AsyncOperationAccepted, AsyncOperationRequest,
-    AsyncOperationSignal, CreateAlarmRequest, ServiceOperationRequest, ServiceOperationResponse,
-    SyncEnvelope, TransitionAlarmRequest, TransitionAlarmResponse,
+    AsyncOperationSignal, ChatSession, ConnectorConsent, CorrelationFinding, CreateAlarmRequest,
+    EmbeddingDescriptor, MorningBriefing, OnboardingIntent, RealtimeEnvelope,
+    ServiceOperationRequest, ServiceOperationResponse, SourceItemCandidate, SyncEnvelope,
+    TransitionAlarmRequest, TransitionAlarmResponse, UsefulnessDecision,
 };
 use schemars::schema_for;
 
@@ -20,6 +22,15 @@ fn every_public_wire_type_has_a_generated_schema() {
         schema_for!(SyncEnvelope),
         schema_for!(TransitionAlarmRequest),
         schema_for!(TransitionAlarmResponse),
+        schema_for!(OnboardingIntent),
+        schema_for!(ConnectorConsent),
+        schema_for!(SourceItemCandidate),
+        schema_for!(UsefulnessDecision),
+        schema_for!(MorningBriefing),
+        schema_for!(EmbeddingDescriptor),
+        schema_for!(CorrelationFinding),
+        schema_for!(RealtimeEnvelope),
+        schema_for!(ChatSession),
     ] {
         let encoded = serde_json::to_value(schema).expect("schema serializes");
         assert_eq!(
@@ -35,6 +46,7 @@ fn repository_contains_only_declarations() {
     let source = include_str!("../src/lib.rs");
     assert!(!source.contains("impl AlarmRepository for"));
     assert!(!source.contains("impl SyncTransport for"));
+    assert!(!source.contains("impl BriefingRepository for"));
     for forbidden in ["reqwest", "sea_orm", "sqlx", "axum", "tokio::net"] {
         assert!(
             !source.contains(forbidden),

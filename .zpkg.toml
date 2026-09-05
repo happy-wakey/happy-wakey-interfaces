@@ -1,7 +1,7 @@
 [package]
 org = "happy-wakey"
 name = "happy-wakey-interfaces"
-version = "0.1.0"
+version = "0.2.0"
 description = "Canonical Happy Wakey contracts, schemas, and formal specifications"
 license = "MIT"
 keywords = ["alarms", "contracts", "json-schema", "quint", "sync"]
@@ -14,7 +14,7 @@ url = "https://github.com/happy-wakey/happy-wakey-interfaces"
 include_readme = true
 tag_format = "v{version}"
 exclude = [".env", ".env.*", "target/**", "tmp/**", "**/*.log", ".DS_Store"]
-smoke_test = "test -f \"$ZED_PKG_TEST_TARGET/schemas/alarm.schema.json\" && test -f \"$ZED_PKG_TEST_TARGET/openapi/happy-wakey.openapi.json\""
+smoke_test = "test -f \"$ZED_PKG_TEST_TARGET/schemas/morning-briefing.schema.json\" && test -f \"$ZED_PKG_TEST_TARGET/typespec/main.tsp\" && test -f \"$ZED_PKG_TEST_TARGET/generated/provenance.json\""
 
 [targets.repository]
 dir = "."

@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interfaces.hawky.pro/schemas/morning-briefing.schema.json",
+  "title": "Happy Wakey Morning Briefing",
+  "description": "Independent JSON Schema authority for feedless, tenant-scoped morning briefings.",
+  "$ref": "#/$defs/MorningBriefing",
+  "$defs": {
+    "OnboardingIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "accountKind", "timeZone", "morningWindowStart", "selectedConnectors", "consentVersion"],
+      "properties": {
+        "requestId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "accountKind": {"enum": ["individual", "organization_member"]},
+        "organizationName": {"type": "string", "minLength": 1, "maxLength": 160},
+        "requestedSeatCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "timeZone": {"type": "string", "minLength": 1, "maxLength": 128},
+        "morningWindowStart": {"type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$"},
+        "selectedConnectors": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/ConnectorKind"}},
+        "consentVersion": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "AccountContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subjectId", "accountKind", "tenantId", "policyVersion"],
+      "properties": {
+        "subjectId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "accountKind": {"enum": ["individual", "organization_member"]},
+        "tenantId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "organizationId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "policyVersion": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "ConnectorConsent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consentId", "connector", "state", "scopes", "sourceAccountRef"],
+      "properties": {
+        "consentId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "connector": {"$ref": "#/$defs/ConnectorKind"},
+        "state": {"enum": ["pending", "granted", "revoked", "expired"]},
+        "scopes": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 128}, "uniqueItems": true},
+        "grantedAt": {"type": "string", "format": "date-time"},
+        "expiresAt": {"type": "string", "format": "date-time"},
+        "sourceAccountRef": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "ConnectorKind": {
+      "enum": ["email", "whatsapp", "linkedin", "x_dm", "slack", "teams", "calendar", "weather", "flights", "markets", "crm"]
+    },
+    "SourceItemCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceItemRef", "connector", "senderClass", "receivedAt", "threadRef", "encryptedContentRef", "contentSha256", "hasDirectReplyRequest"],
+      "properties": {
+        "sourceItemRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "connector": {"$ref": "#/$defs/ConnectorKind"},
+        "senderClass": {"enum": ["vip", "known", "unknown"]},
+        "receivedAt": {"type": "string", "format": "date-time"},
+        "threadRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "encryptedContentRef": {"type": "string", "minLength": 1, "maxLength": 256},
+        "contentSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "hasDirectReplyRequest": {"type": "boolean"},
+        "dueAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "UsefulnessDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisionId", "sourceItemRef", "disposition", "score", "reasons", "modelRef", "policyVersion", "evaluatedAt", "contentSha256"],
+      "properties": {
+        "decisionId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sourceItemRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "disposition": {"enum": ["useful", "not_useful", "needs_review"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"enum": ["vip_sender", "reply_requested", "blocking_others", "time_sensitive", "travel_disruption", "security_risk", "financial_impact", "customer_escalation", "low_signal", "promotional", "unknown"]}
+        },
+        "modelRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "policyVersion": {"type": "string", "minLength": 1, "maxLength": 128},
+        "evaluatedAt": {"type": "string", "format": "date-time"},
+        "contentSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "SafeDeepLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["linkId", "connector", "targetUrl", "decisionId", "sourceItemRef", "expiresAt", "requiresReauthentication", "feedFallbackAllowed"],
+      "properties": {
+        "linkId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "connector": {"$ref": "#/$defs/ConnectorKind"},
+        "targetUrl": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "decisionId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sourceItemRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "expiresAt": {"type": "string", "format": "date-time"},
+        "requiresReauthentication": {"type": "boolean"},
+        "feedFallbackAllowed": {"const": false}
+      }
+    },
+    "BriefingCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cardId", "kind", "priority", "title", "summary", "sourceLabel", "observedAt"],
+      "properties": {
+        "cardId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "kind": {"enum": ["this_day_in_history", "useful_message", "email_bottleneck", "team_bottleneck", "calendar", "weather", "extended_outlook", "flight", "market", "kpi", "task", "news", "audio_briefing"]},
+        "priority": {"enum": ["critical", "high", "normal", "low"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 160},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 1200},
+        "sourceLabel": {"type": "string", "minLength": 1, "maxLength": 160},
+        "observedAt": {"type": "string", "format": "date-time"},
+        "actionBy": {"type": "string", "format": "date-time"},
+        "deepLink": {"$ref": "#/$defs/SafeDeepLink"},
+        "usefulness": {"$ref": "#/$defs/UsefulnessDecision"},
+        "uncertaintyNotice": {"type": "string", "maxLength": 500}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["deepLink"]},
+          "then": {
+            "required": ["usefulness"],
+            "properties": {
+              "usefulness": {"properties": {"disposition": {"const": "useful"}, "score": {"minimum": 0.8}}}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "extended_outlook"}}, "required": ["kind"]},
+          "then": {"required": ["uncertaintyNotice"]}
+        }
+      ]
+    },
+    "MorningBriefing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "briefingId", "account", "localDate", "timeZone", "generatedAt", "validUntil", "cards", "suppressedItemCount"],
+      "properties": {
+        "schema": {"const": "happy-wakey.morning-briefing.v1"},
+        "briefingId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "account": {"$ref": "#/$defs/AccountContext"},
+        "localDate": {"type": "string", "format": "date"},
+        "timeZone": {"type": "string", "minLength": 1, "maxLength": 128},
+        "generatedAt": {"type": "string", "format": "date-time"},
+        "validUntil": {"type": "string", "format": "date-time"},
+        "cards": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/BriefingCard"}},
+        "audioUrl": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "audioDurationSeconds": {"type": "integer", "minimum": 0, "maximum": 3600},
+        "suppressedItemCount": {"type": "integer", "minimum": 0}
+      }
+    },
+    "EmbeddingDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vectorRef", "tenantId", "sourceItemRef", "modelRef", "dimensions", "contentSha256", "retentionClass", "createdAt"],
+      "properties": {
+        "vectorRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "tenantId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sourceItemRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "modelRef": {"type": "string", "minLength": 1, "maxLength": 128},
+        "dimensions": {"type": "integer", "minimum": 1, "maximum": 4100},
+        "contentSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "retentionClass": {"enum": ["ephemeral", "standard", "legal_hold"]},
+        "createdAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "CorrelationFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId", "tenantId", "feature", "outcome", "coefficient", "pValue", "confidenceLow", "confidenceHigh", "sampleSize", "correction", "causalClaimAllowed", "computedAt"],
+      "properties": {
+        "findingId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "tenantId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "feature": {"type": "string", "minLength": 1, "maxLength": 160},
+        "outcome": {"type": "string", "minLength": 1, "maxLength": 160},
+        "coefficient": {"type": "number", "minimum": -1, "maximum": 1},
+        "pValue": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidenceLow": {"type": "number"},
+        "confidenceHigh": {"type": "number"},
+        "sampleSize": {"type": "integer", "minimum": 3},
+        "correction": {"enum": ["none", "bonferroni", "benjamini_hochberg"]},
+        "causalClaimAllowed": {"const": false},
+        "computedAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "RealtimeEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "eventId", "tenantId", "subjectId", "sequence", "transport", "resumeToken", "eventType", "payloadJson", "emittedAt", "ackRequired"],
+      "properties": {
+        "schema": {"const": "happy-wakey.realtime.v1"},
+        "eventId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "tenantId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "subjectId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sequence": {"type": "integer", "minimum": 0},
+        "transport": {"enum": ["websocket", "tls_tcp", "nats"]},
+        "resumeToken": {"type": "string", "minLength": 1, "maxLength": 256},
+        "eventType": {"type": "string", "minLength": 1, "maxLength": 128},
+        "payloadJson": {"type": "string", "minLength": 2, "maxLength": 262144},
+        "emittedAt": {"type": "string", "format": "date-time"},
+        "ackRequired": {"type": "boolean"}
+      }
+    },
+    "ChatSession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sessionId", "tenantId", "audience", "sharedAuthSubject", "allowedSearchScopes", "openedAt", "expiresAt"],
+      "properties": {
+        "sessionId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "tenantId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "audience": {"enum": ["sales_visitor", "customer_support", "organization_admin", "internal_operator", "owner"]},
+        "sharedAuthSubject": {"type": "string", "minLength": 1, "maxLength": 128},
+        "allowedSearchScopes": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+        "openedAt": {"type": "string", "format": "date-time"},
+        "expiresAt": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

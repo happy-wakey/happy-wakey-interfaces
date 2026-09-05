@@ -1,0 +1,25 @@
+{
+  "schema": "happy-wakey.contract-generation.v1",
+  "authorities": {
+    "jsonSchema": {
+      "path": "schemas/morning-briefing.schema.json",
+      "sha256": "9cef39c0a7de00e64d466f5f7ac80951dacfaae00c2ba99633d639b4d8105cdc"
+    },
+    "typeSpec": {
+      "path": "typespec/main.tsp",
+      "sha256": "74de09fd00e546fcda42f45560c3b6cde16852fef9a209e3184054f731bcba26"
+    }
+  },
+  "intermediates": {
+    "typeSpecOpenApi": {
+      "path": "generated/typespec/openapi/openapi.yaml",
+      "sha256": "9039ca402b76e448659549a9582811ad03c4051b39617732dbe1909bc6ff1016"
+    }
+  },
+  "outputs": [
+    "generated/json-schema/types.d.ts",
+    "generated/json-schema/validator.cjs",
+    "generated/typespec/types.ts",
+    "generated/typespec/validator.cjs"
+  ]
+}

@@ -12,10 +12,43 @@ implementation.
 | --- | --- |
 | `src/lib.rs` | Rust data types and trait signatures; no concrete bodies |
 | `schemas/*.schema.json` | Draft 2020-12 validation at every trust boundary |
+| `typespec/*.tsp` | Independent HTTP and Protobuf interface authority |
 | `openapi/happy-wakey.openapi.json` | HTTP routes and their exact schemas |
 | `sql/schema.sql` | Declarative PostgreSQL/CockroachDB desired state |
 | `formal/alarm_occurrence.qnt` | Total alarm-occurrence transition relation |
 | `examples/*.json` | Cross-language conformance fixtures |
+
+TypeSpec and JSON Schema are peer sources of truth. Neither is generated from
+the other. `npm run generate` compiles TypeSpec to OpenAPI and Protobuf, then
+generates an executable validator and TypeScript types from the TypeSpec path;
+it separately generates an executable validator and declarations from the
+JSON Schema path. `generated/provenance.json` records the source hashes, and
+CI rejects generated drift. The peer-coverage test requires both sources to
+declare the public morning-briefing models while allowing each source to keep
+its own validation semantics.
+
+## Morning briefing boundary
+
+The briefing contract describes a feedless heads-up display: useful messages,
+VIP and bottleneck signals, calendar, travel, weather, markets, KPIs, history,
+tasks, news, and optional audio. It intentionally carries summaries and opaque
+source references rather than reusable connector credentials or raw private
+message bodies.
+
+- A social deep link must point to a specific item, carry a still-valid
+  `useful` decision with a score of at least `0.8`, and set
+  `feedFallbackAllowed` to `false`.
+- Every briefing, chat session, embedding descriptor, regression finding, and
+  realtime event is tenant scoped. The authenticated subject and tenant are
+  server-derived Shared Auth claims, never caller-selected authorization.
+- Embeddings are referenced by hash and opaque ID; vectors and original private
+  content are not wire payloads. Dimensions are bounded at 4,100.
+- Correlation findings explicitly forbid causal claims and record sample size,
+  confidence bounds, p-value, and multiple-testing correction.
+- Extended weather is an uncertainty-labelled outlook. A 15–21 day ensemble
+  must never be presented as a deterministic forecast.
+- WebSocket, persistent TLS/TCP, and NATS carry one sequenced realtime envelope
+  with resumable delivery and explicit acknowledgement semantics.
 
 The existing Rust/Qt and Flutter app machines remain the authorities for their
 native UI/effect state. `AppSnapshot` mirrors that established contract so
@@ -57,6 +90,8 @@ or API payloads.
 
 ```sh
 python3 scripts/validate_contracts.py
+npm ci
+npm run check
 cargo test --all-targets
 cargo fmt --all -- --check
 cargo clippy --all-targets -- -D warnings

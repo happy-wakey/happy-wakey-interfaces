@@ -1,0 +1,76 @@
+{
+  "id": "1c9a4e77-3b60-4d18-8f4a-5e7b2c0d1004",
+  "day": "2026-09-05",
+  "time_zone": "America/Chicago",
+  "working_hours_start_local": "09:00",
+  "working_hours_end_local": "17:30",
+  "blocks": [
+    {
+      "id": "2a0b5f88-4c71-4e29-9051-6f8c3d1e2005",
+      "kind": "wind_down",
+      "origin": "happy_wakey",
+      "title": "Grogginess window - light tasks only",
+      "starts_at": "2026-09-05T11:38:00Z",
+      "ends_at": "2026-09-05T13:00:00Z",
+      "is_flexible": true,
+      "is_all_day": false,
+      "priority": 2,
+      "linked_entity_id": null,
+      "source_connection_id": null,
+      "location_label": null,
+      "join_url": null,
+      "energy_fit": 88,
+      "completed_at": null
+    },
+    {
+      "id": "3b1c6099-5d82-4f3a-a162-708d4e2f3006",
+      "kind": "calendar_event",
+      "origin": "external_mirror",
+      "title": "Design review",
+      "starts_at": "2026-09-05T15:00:00Z",
+      "ends_at": "2026-09-05T16:00:00Z",
+      "is_flexible": false,
+      "is_all_day": false,
+      "priority": 3,
+      "linked_entity_id": null,
+      "source_connection_id": "7a2c7f1f-6c4b-4b37-ad2f-3bd2b5f3e007",
+      "location_label": "Zoom",
+      "join_url": "https://example.zoom.us/j/000000",
+      "energy_fit": 71,
+      "completed_at": null
+    },
+    {
+      "id": "4c2d711a-6e93-4a4b-b273-819e5f304007",
+      "kind": "focus",
+      "origin": "happy_wakey",
+      "title": "Deep work: parity spec",
+      "starts_at": "2026-09-05T16:15:00Z",
+      "ends_at": "2026-09-05T18:15:00Z",
+      "is_flexible": true,
+      "is_all_day": false,
+      "priority": 4,
+      "linked_entity_id": "5d3e822b-7fa4-4b5c-c384-92af60415008",
+      "source_connection_id": null,
+      "location_label": null,
+      "join_url": null,
+      "energy_fit": 94,
+      "completed_at": null
+    }
+  ],
+  "capacity": { "available_minutes": 510, "committed_minutes": 60, "planned_minutes": 480, "overcommitted_minutes": 30 },
+  "energy_curve": [
+    { "starts_at": "2026-09-05T11:38:00Z", "phase": "grogginess", "level": 32, "basis": "wearable" },
+    { "starts_at": "2026-09-05T13:00:00Z", "phase": "rising", "level": 61, "basis": "wearable" },
+    { "starts_at": "2026-09-05T16:00:00Z", "phase": "peak", "level": 88, "basis": "modeled" },
+    { "starts_at": "2026-09-05T19:30:00Z", "phase": "dip", "level": 47, "basis": "modeled" }
+  ],
+  "conflicts": [
+    { "kind": "over_capacity", "block_ids": ["4c2d711a-6e93-4a4b-b273-819e5f304007"], "detail": "30 planned minutes fall outside working hours" }
+  ],
+  "rollovers": [
+    { "entity_id": "6e4f933c-80b5-4c6d-d495-a3b071526009", "title": "Reply to vendor contract", "original_day": "2026-09-03", "times_rolled": 2, "decided": false }
+  ],
+  "planned_at": "2026-09-05T12:05:00Z",
+  "generation": 4,
+  "updated_at": "2026-09-05T12:05:00Z"
+}

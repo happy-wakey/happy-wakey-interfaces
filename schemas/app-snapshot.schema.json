@@ -15,7 +15,31 @@
     "generation": { "$ref": "common.schema.json#/$defs/generation" },
     "lanes": {
       "type": "object",
-      "propertyNames": { "enum": ["calendar", "weather", "stocks", "news", "onboarding_hydration", "desktop_notification", "cloud_notification", "cloud_reminder_sync", "bluetooth"] },
+      "propertyNames": {
+        "enum": [
+          "calendar",
+          "weather",
+          "stocks",
+          "news",
+          "onboarding_hydration",
+          "desktop_notification",
+          "cloud_notification",
+          "cloud_reminder_sync",
+          "bluetooth",
+          "briefing",
+          "day_plan",
+          "tasks",
+          "habits",
+          "focus",
+          "sleep",
+          "biometrics",
+          "inbox",
+          "messages",
+          "commute",
+          "portfolio",
+          "provider_sync"
+        ]
+      },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,

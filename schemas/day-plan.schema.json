@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/day-plan.schema.json",
+  "title": "Happy Wakey day plan",
+  "description": "The owner's plan for one civil day: a single ordered ribbon of blocks drawn from calendar events, tasks, habits, focus sessions, commute and recovery, plus the capacity arithmetic that says whether the day fits and the predicted energy curve that says when to put the hard work. A block sourced from an external calendar is a mirror, not an authority; only `origin: happy_wakey` blocks may be rewritten by the planner.",
+  "$defs": {
+    "block_kind": {
+      "enum": [
+        "calendar_event",
+        "task",
+        "habit",
+        "focus",
+        "break",
+        "meal",
+        "commute",
+        "buffer",
+        "wind_down",
+        "sleep"
+      ]
+    },
+    "block_origin": {
+      "description": "`external_mirror` blocks are read-only copies of an upstream event; the planner may schedule around them but must never move or delete them. `happy_wakey` blocks were placed by this product and may be re-placed. `owner` blocks were placed by hand and are re-placed only when `is_flexible` is true.",
+      "enum": ["external_mirror", "happy_wakey", "owner"]
+    },
+    "energy_phase": {
+      "description": "Predicted circadian phase, forward-looking rather than a report of the past.",
+      "enum": ["grogginess", "rising", "peak", "dip", "second_wind", "wind_down", "melatonin_window"]
+    },
+    "conflict_kind": {
+      "enum": ["overlap", "over_capacity", "insufficient_travel_time", "outside_working_hours", "past_deadline"]
+    },
+    "plan_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "origin",
+        "title",
+        "starts_at",
+        "ends_at",
+        "is_flexible",
+        "is_all_day",
+        "priority",
+        "linked_entity_id",
+        "source_connection_id",
+        "location_label",
+        "join_url",
+        "energy_fit",
+        "completed_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "kind": { "$ref": "#/$defs/block_kind" },
+        "origin": { "$ref": "#/$defs/block_origin" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "starts_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "ends_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "is_flexible": { "type": "boolean" },
+        "is_all_day": { "type": "boolean" },
+        "priority": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "linked_entity_id": {
+          "description": "The task, habit or alarm this block realizes, when there is one.",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        },
+        "source_connection_id": {
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        },
+        "location_label": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 200 }, { "type": "null" }]
+        },
+        "join_url": {
+          "anyOf": [{ "type": "string", "format": "uri", "maxLength": 2048 }, { "type": "null" }]
+        },
+        "energy_fit": {
+          "description": "How well the placement matches the predicted curve, 0 worst to 100 best. Null when no sleep or circadian signal was available; an absent signal must not be rendered as a neutral score.",
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "completed_at": {
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }]
+        }
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available_minutes", "committed_minutes", "planned_minutes", "overcommitted_minutes"],
+      "properties": {
+        "available_minutes": {
+          "description": "Working-hours minutes in the day before anything is placed.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "committed_minutes": {
+          "description": "Minutes consumed by external_mirror blocks the planner cannot move.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "planned_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "overcommitted_minutes": {
+          "description": "Planned minutes that do not fit. Must be surfaced, never absorbed silently.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        }
+      }
+    },
+    "energy_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starts_at", "phase", "level", "basis"],
+      "properties": {
+        "starts_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "phase": { "$ref": "#/$defs/energy_phase" },
+        "level": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "basis": { "$ref": "sleep-summary.schema.json#/$defs/measurement_basis" }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "block_ids", "detail"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/conflict_kind" },
+        "block_ids": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/uuid" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "detail": { "type": "string", "minLength": 1, "maxLength": 240 }
+      }
+    },
+    "rollover": {
+      "description": "An item carried from a previous day that the owner has not yet re-decided. Carrying forward silently is the failure mode this field exists to prevent.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_id", "title", "original_day", "times_rolled", "decided"],
+      "properties": {
+        "entity_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "original_day": { "$ref": "sleep-summary.schema.json#/$defs/civil_date" },
+        "times_rolled": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "decided": { "type": "boolean" }
+      }
+    },
+    "day_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "day",
+        "time_zone",
+        "working_hours_start_local",
+        "working_hours_end_local",
+        "blocks",
+        "capacity",
+        "energy_curve",
+        "conflicts",
+        "rollovers",
+        "planned_at",
+        "generation",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "day": { "$ref": "sleep-summary.schema.json#/$defs/civil_date" },
+        "time_zone": { "type": "string", "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$", "maxLength": 64 },
+        "working_hours_start_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "working_hours_end_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "blocks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/plan_block" },
+          "maxItems": 200
+        },
+        "capacity": { "$ref": "#/$defs/capacity" },
+        "energy_curve": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/energy_point" },
+          "maxItems": 48
+        },
+        "conflicts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/conflict" },
+          "maxItems": 50
+        },
+        "rollovers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rollover" },
+          "maxItems": 100
+        },
+        "planned_at": {
+          "description": "When the owner last completed the planning ritual for this day. Null means the plan is machine-proposed and not yet confirmed.",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }]
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  },
+  "$ref": "#/$defs/day_plan"
+}

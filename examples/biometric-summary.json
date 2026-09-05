@@ -1,0 +1,29 @@
+{
+  "id": "b81f3d05-77aa-4c11-9f2e-1d4c8ab5e003",
+  "day": "2026-09-05",
+  "time_zone": "America/Chicago",
+  "source_connection_id": "6f1b6f0e-5b3a-4a26-9c1e-2ac1a4f2d001",
+  "source_provider": "oura",
+  "measurement_basis": "wearable",
+  "confidence": "medium",
+  "baseline_days": 62,
+  "readiness_score": 68,
+  "recovery_percent": null,
+  "strain_load": null,
+  "resting_heart_rate_bpm": 58.4,
+  "heart_rate_variability_ms": 44.0,
+  "respiratory_rate_bpm": 14.6,
+  "blood_oxygen_percent": null,
+  "skin_temperature_deviation_c": 0.6,
+  "steps": 3120,
+  "active_energy_kcal": 210.5,
+  "workout_minutes": 0,
+  "cardio_fitness_vo2max": null,
+  "anomalies": [
+    { "metric": "resting_heart_rate", "direction": "above_baseline", "severity": "notable", "observed": 58.4, "baseline_mean": 53.1, "z_score": 2.1 },
+    { "metric": "heart_rate_variability", "direction": "below_baseline", "severity": "marked", "observed": 44.0, "baseline_mean": 62.8, "z_score": -2.6 }
+  ],
+  "generation": 1,
+  "recorded_at": "2026-09-05T12:02:00Z",
+  "updated_at": "2026-09-05T12:02:00Z"
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "happy-wakey/inbox-digest/v1",
+  "generated_at": "2026-09-05T12:00:00Z",
+  "window_start": "2026-09-04T22:00:00Z",
+  "window_end": "2026-09-05T12:00:00Z",
+  "accounts": [
+    {
+      "source_connection_id": "8b3d8f2f-7d5c-4c48-be30-4ce3c6f4e008",
+      "provider": "gmail",
+      "account_label": "Personal",
+      "content_class": "metadata_only",
+      "status": "connected",
+      "unread_total": 41,
+      "unread_since_window_start": 6,
+      "items": [
+        {
+          "message_ref": "18f2c9a4d1e0b7c3",
+          "thread_ref": "18f2c9a4d1e0b7c0",
+          "sender_display": "Dana Whitfield",
+          "sender_domain": "acme-legal.com",
+          "subject": "Re: signature needed before Friday",
+          "received_at": "2026-09-05T06:14:00Z",
+          "is_unread": true,
+          "is_calendar_invite": false,
+          "has_attachment": true,
+          "labels": ["INBOX", "IMPORTANT"],
+          "importance": 92,
+          "importance_reasons": ["vip_sender", "awaiting_your_reply", "mentions_deadline"],
+          "snippet": null
+        }
+      ],
+      "truncated": true
+    },
+    {
+      "source_connection_id": "9c4e9030-8e6d-4d59-cf41-5df4d70509a9",
+      "provider": "microsoft_graph_mail",
+      "account_label": "Work",
+      "content_class": "counts_only",
+      "status": "rate_limited",
+      "unread_total": 12,
+      "unread_since_window_start": 3,
+      "items": [],
+      "truncated": true
+    }
+  ],
+  "vip_domains": ["acme-legal.com", "boardsecretary.org"],
+  "generation": 7
+}

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/market-watch.schema.json",
+  "title": "Happy Wakey market watch",
+  "description": "The owner's watchlist, holdings and market events for the morning. Every quote carries the `feed_class` its licence actually grants and the timestamp it was struck at, so a fifteen-minute-delayed price can never be rendered as live. Holdings are read-only: this contract has no order-placement surface and no brokerage credential.",
+  "$defs": {
+    "market_phase": { "enum": ["pre_market", "open", "after_hours", "closed", "holiday"] },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "display_name",
+        "currency",
+        "last_price",
+        "previous_close",
+        "change_absolute",
+        "change_percent",
+        "struck_at",
+        "feed_class",
+        "source_connection_id",
+        "source_provider"
+      ],
+      "properties": {
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9.:^/-]{1,24}$" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "last_price": { "type": "number" },
+        "previous_close": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+        "change_absolute": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+        "change_percent": { "anyOf": [{ "type": "number", "minimum": -100, "maximum": 100000 }, { "type": "null" }] },
+        "struck_at": {
+          "description": "When the price was true at the venue, not when it was fetched.",
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "feed_class": { "$ref": "provider-connection.schema.json#/$defs/feed_class" },
+        "source_connection_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "source_provider": { "$ref": "provider-connection.schema.json#/$defs/provider" }
+      }
+    },
+    "holding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_ref",
+        "symbol",
+        "quantity",
+        "currency",
+        "market_value",
+        "cost_basis",
+        "unrealized_change",
+        "as_of",
+        "source_connection_id"
+      ],
+      "properties": {
+        "account_ref": {
+          "description": "Opaque brokerage account handle. Never an account number.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9.:^/-]{1,24}$" },
+        "quantity": { "type": "number" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "market_value": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+        "cost_basis": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+        "unrealized_change": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+        "as_of": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "source_connection_id": { "$ref": "common.schema.json#/$defs/uuid" }
+      }
+    },
+    "price_alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "direction", "threshold", "triggered_at", "observed_price"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "symbol": { "type": "string", "pattern": "^[A-Z0-9.:^/-]{1,24}$" },
+        "direction": { "enum": ["above", "below", "percent_move"] },
+        "threshold": { "type": "number" },
+        "triggered_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "observed_price": { "type": "number" }
+      }
+    },
+    "calendar_event": {
+      "description": "An earnings release or scheduled economic print relevant to a watched symbol.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "symbol", "headline", "scheduled_for", "is_estimated"],
+      "properties": {
+        "kind": { "enum": ["earnings", "dividend", "split", "economic_release"] },
+        "symbol": {
+          "anyOf": [{ "type": "string", "pattern": "^[A-Z0-9.:^/-]{1,24}$" }, { "type": "null" }]
+        },
+        "headline": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "scheduled_for": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "is_estimated": { "type": "boolean" }
+      }
+    },
+    "market_watch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "generated_at",
+        "market_phase",
+        "quotes",
+        "holdings",
+        "triggered_alerts",
+        "calendar",
+        "generation"
+      ],
+      "properties": {
+        "schema": { "const": "happy-wakey/market-watch/v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "market_phase": { "$ref": "#/$defs/market_phase" },
+        "quotes": { "type": "array", "items": { "$ref": "#/$defs/quote" }, "maxItems": 200 },
+        "holdings": { "type": "array", "items": { "$ref": "#/$defs/holding" }, "maxItems": 500 },
+        "triggered_alerts": { "type": "array", "items": { "$ref": "#/$defs/price_alert" }, "maxItems": 100 },
+        "calendar": { "type": "array", "items": { "$ref": "#/$defs/calendar_event" }, "maxItems": 100 },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" }
+      }
+    }
+  },
+  "$ref": "#/$defs/market_watch"
+}

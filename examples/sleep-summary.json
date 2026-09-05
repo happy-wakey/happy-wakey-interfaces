@@ -1,0 +1,31 @@
+{
+  "id": "9d2c7a41-0f52-4f8b-a0d3-6b21c9e4f002",
+  "night_of": "2026-09-04",
+  "time_zone": "America/Chicago",
+  "source_connection_id": "6f1b6f0e-5b3a-4a26-9c1e-2ac1a4f2d001",
+  "source_provider": "oura",
+  "measurement_basis": "wearable",
+  "confidence": "high",
+  "bedtime_at": "2026-09-04T04:12:00Z",
+  "wake_at": "2026-09-05T11:38:00Z",
+  "time_in_bed_minutes": 446,
+  "asleep_minutes": 401,
+  "sleep_latency_minutes": 14,
+  "awakenings": 3,
+  "efficiency_percent": 89.9,
+  "stage_minutes": { "awake": 45, "light": 214, "deep": 71, "rem": 116, "unspecified": 0 },
+  "overnight_vitals": {
+    "resting_heart_rate_bpm": 54.2,
+    "heart_rate_variability_ms": 61.5,
+    "respiratory_rate_bpm": 14.1,
+    "blood_oxygen_percent": null,
+    "skin_temperature_deviation_c": -0.2
+  },
+  "sleep_score": 81,
+  "sleep_debt_minutes": 96,
+  "regularity_percent": 74.5,
+  "recommended_bedtime_local": "22:45",
+  "generation": 1,
+  "recorded_at": "2026-09-05T12:01:00Z",
+  "updated_at": "2026-09-05T12:01:00Z"
+}

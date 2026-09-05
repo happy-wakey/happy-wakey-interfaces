@@ -1,0 +1,5 @@
+{
+  "schema": "happy-wakey.async-operation.request.v1",
+  "operation_id": "018f5cc6-6d8b-7b2a-9f38-269e6a7b1f33",
+  "operation": "list_alarms"
+}

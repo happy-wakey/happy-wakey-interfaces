@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/environment-brief.schema.json",
+  "title": "Happy Wakey environment brief",
+  "description": "Outside conditions for the morning: weather now and ahead, daylight window, air quality, and the commute the owner is actually about to make. Location is carried as a coarse label and a rounded coordinate pair, never a precise fix, because a dashboard needs a city and a sunrise, not a street address.",
+  "$defs": {
+    "condition": {
+      "enum": [
+        "clear",
+        "partly_cloudy",
+        "cloudy",
+        "fog",
+        "drizzle",
+        "rain",
+        "freezing_rain",
+        "snow",
+        "sleet",
+        "thunderstorm",
+        "hail",
+        "wind",
+        "dust",
+        "smoke",
+        "unknown"
+      ]
+    },
+    "coarse_location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "latitude", "longitude", "time_zone"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "latitude": {
+          "description": "Rounded to two decimal places, about one kilometre. Finer precision must not be stored here.",
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "multipleOf": 0.01
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180,
+          "multipleOf": 0.01
+        },
+        "time_zone": { "type": "string", "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$", "maxLength": 64 }
+      }
+    },
+    "conditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition",
+        "temperature_c",
+        "feels_like_c",
+        "relative_humidity_percent",
+        "wind_speed_kph",
+        "wind_gust_kph",
+        "precipitation_mm",
+        "precipitation_probability_percent",
+        "cloud_cover_percent",
+        "observed_at"
+      ],
+      "properties": {
+        "condition": { "$ref": "#/$defs/condition" },
+        "temperature_c": { "type": "number", "minimum": -100, "maximum": 70 },
+        "feels_like_c": { "anyOf": [{ "type": "number", "minimum": -150, "maximum": 100 }, { "type": "null" }] },
+        "relative_humidity_percent": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+        "wind_speed_kph": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 500 }, { "type": "null" }] },
+        "wind_gust_kph": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 600 }, { "type": "null" }] },
+        "precipitation_mm": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 2000 }, { "type": "null" }] },
+        "precipitation_probability_percent": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+        "cloud_cover_percent": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+        "observed_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "hourly_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starts_at", "condition", "temperature_c", "precipitation_probability_percent"],
+      "properties": {
+        "starts_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "condition": { "$ref": "#/$defs/condition" },
+        "temperature_c": { "type": "number", "minimum": -100, "maximum": 70 },
+        "precipitation_probability_percent": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        }
+      }
+    },
+    "daylight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["civil_dawn_at", "sunrise_at", "sunset_at", "civil_dusk_at", "daylight_minutes", "daylight_change_minutes"],
+      "properties": {
+        "civil_dawn_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "sunrise_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "sunset_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "civil_dusk_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "daylight_minutes": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1440 }, { "type": "null" }] },
+        "daylight_change_minutes": {
+          "description": "Change against yesterday, signed. Polar day and polar night are expressed as nulls above with this at zero, not as a fabricated sunrise.",
+          "anyOf": [{ "type": "integer", "minimum": -600, "maximum": 600 }, { "type": "null" }]
+        }
+      }
+    },
+    "air_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "scale", "category", "dominant_pollutant", "observed_at"],
+      "properties": {
+        "index": { "type": "number", "minimum": 0, "maximum": 1000 },
+        "scale": { "enum": ["us_aqi", "eu_aqi", "uk_daqi", "other"] },
+        "category": { "enum": ["good", "moderate", "unhealthy_sensitive", "unhealthy", "very_unhealthy", "hazardous"] },
+        "dominant_pollutant": {
+          "anyOf": [{ "enum": ["pm2_5", "pm10", "ozone", "no2", "so2", "co"] }, { "type": "null" }]
+        },
+        "observed_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "pollen_reading": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "level", "index"],
+      "properties": {
+        "kind": { "enum": ["tree", "grass", "weed", "mold"] },
+        "level": { "enum": ["none", "low", "moderate", "high", "very_high"] },
+        "index": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 1000 }, { "type": "null" }] }
+      }
+    },
+    "weather_alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "headline", "issuer", "effective_at", "expires_at"],
+      "properties": {
+        "severity": { "enum": ["advisory", "watch", "warning", "emergency"] },
+        "headline": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "issuer": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "effective_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "expires_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] }
+      }
+    },
+    "commute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin_label", "destination_label", "mode", "duration_minutes", "typical_minutes", "delay_minutes", "leave_by_at", "for_block_id"],
+      "properties": {
+        "origin_label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "destination_label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "mode": { "enum": ["drive", "transit", "walk", "cycle"] },
+        "duration_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "typical_minutes": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1440 }, { "type": "null" }] },
+        "delay_minutes": { "anyOf": [{ "type": "integer", "minimum": -1440, "maximum": 1440 }, { "type": "null" }] },
+        "leave_by_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }] },
+        "for_block_id": {
+          "description": "The day-plan block this commute serves, when it is tied to one.",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        }
+      }
+    },
+    "environment_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "generated_at",
+        "location",
+        "current",
+        "hourly",
+        "high_temperature_c",
+        "low_temperature_c",
+        "daylight",
+        "air_quality",
+        "uv_index_max",
+        "pollen",
+        "alerts",
+        "commutes",
+        "generation"
+      ],
+      "properties": {
+        "schema": { "const": "happy-wakey/environment-brief/v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "location": { "$ref": "#/$defs/coarse_location" },
+        "current": { "$ref": "#/$defs/conditions" },
+        "hourly": { "type": "array", "items": { "$ref": "#/$defs/hourly_point" }, "maxItems": 48 },
+        "high_temperature_c": { "anyOf": [{ "type": "number", "minimum": -100, "maximum": 70 }, { "type": "null" }] },
+        "low_temperature_c": { "anyOf": [{ "type": "number", "minimum": -100, "maximum": 70 }, { "type": "null" }] },
+        "daylight": { "$ref": "#/$defs/daylight" },
+        "air_quality": { "anyOf": [{ "$ref": "#/$defs/air_quality" }, { "type": "null" }] },
+        "uv_index_max": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 20 }, { "type": "null" }] },
+        "pollen": { "type": "array", "items": { "$ref": "#/$defs/pollen_reading" }, "maxItems": 8 },
+        "alerts": { "type": "array", "items": { "$ref": "#/$defs/weather_alert" }, "maxItems": 20 },
+        "commutes": { "type": "array", "items": { "$ref": "#/$defs/commute" }, "maxItems": 8 },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" }
+      }
+    }
+  },
+  "$ref": "#/$defs/environment_brief"
+}

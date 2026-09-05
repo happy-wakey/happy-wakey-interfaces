@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/message-digest.schema.json",
+  "title": "Happy Wakey direct-message digest",
+  "description": "What is waiting in the owner's direct messages. In 2026 only a subset of platforms can be read by a third party at all, so `access_level` is a first-class field of the contract rather than an implementation detail: a platform at `policy_unavailable` may never carry threads, and a platform at `count_only` may never carry message text. Encoding the policy here means a client cannot accidentally promise a unified DM inbox that is not legally buildable.",
+  "$defs": {
+    "platform": {
+      "enum": [
+        "slack",
+        "telegram",
+        "discord",
+        "whatsapp",
+        "instagram",
+        "linkedin",
+        "imessage",
+        "x",
+        "os_notifications"
+      ]
+    },
+    "access_level": {
+      "description": "`full_read` is a sanctioned user-level API. `throttled_read` is sanctioned but rate-capped hard enough that completeness is not guaranteed (a non-Marketplace Slack app). `count_only` yields a badge with no content. `policy_unavailable` means no third-party read exists at any tier, and `platform_unavailable` means the running platform cannot reach it.",
+      "enum": ["full_read", "throttled_read", "count_only", "policy_unavailable", "platform_unavailable"]
+    },
+    "thread": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "thread_ref",
+        "counterpart_display",
+        "is_group",
+        "unread_count",
+        "last_message_at",
+        "preview",
+        "mentions_owner",
+        "deep_link"
+      ],
+      "properties": {
+        "thread_ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "counterpart_display": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "is_group": { "type": "boolean" },
+        "unread_count": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "last_message_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "preview": {
+          "description": "Message text preview. Permitted only at access_level full_read or throttled_read.",
+          "anyOf": [{ "type": "string", "maxLength": 300 }, { "type": "null" }]
+        },
+        "mentions_owner": { "type": "boolean" },
+        "deep_link": {
+          "anyOf": [{ "type": "string", "format": "uri", "maxLength": 2048 }, { "type": "null" }]
+        }
+      }
+    },
+    "platform_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "access_level",
+        "source_connection_id",
+        "status",
+        "unread_total",
+        "threads",
+        "truncated",
+        "completeness_note"
+      ],
+      "properties": {
+        "platform": { "$ref": "#/$defs/platform" },
+        "access_level": { "$ref": "#/$defs/access_level" },
+        "source_connection_id": {
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        },
+        "status": { "$ref": "provider-connection.schema.json#/$defs/status" },
+        "unread_total": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1000000 }, { "type": "null" }]
+        },
+        "threads": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/thread" },
+          "maxItems": 50
+        },
+        "truncated": { "type": "boolean" },
+        "completeness_note": {
+          "description": "Why this platform's list may be short: a rate cap, a consent gap, or a policy prohibition. Required so the surface can say what it does not know.",
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "access_level": { "enum": ["policy_unavailable", "platform_unavailable"] } },
+            "required": ["access_level"]
+          },
+          "then": {
+            "properties": {
+              "threads": { "maxItems": 0 },
+              "unread_total": { "type": "null" },
+              "completeness_note": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "access_level": { "const": "count_only" } },
+            "required": ["access_level"]
+          },
+          "then": {
+            "properties": {
+              "threads": { "items": { "properties": { "preview": { "type": "null" } } } }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "access_level": { "const": "throttled_read" } },
+            "required": ["access_level"]
+          },
+          "then": { "properties": { "completeness_note": { "type": "string" } } }
+        }
+      ]
+    },
+    "message_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "generated_at", "window_start", "window_end", "platforms", "generation"],
+      "properties": {
+        "schema": { "const": "happy-wakey/message-digest/v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "window_start": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "window_end": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "platforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/platform_digest" },
+          "maxItems": 12
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" }
+      }
+    }
+  },
+  "$ref": "#/$defs/message_digest"
+}

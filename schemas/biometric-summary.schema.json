@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/biometric-summary.schema.json",
+  "title": "Happy Wakey daily biometric summary",
+  "description": "One owner's daytime physiology for one civil day, plus the deviations from their own rolling baseline. Anomalies here are statements about a personal baseline, never a clinical assessment: the contract carries no diagnosis field and downstream surfaces must not render one.",
+  "$defs": {
+    "metric": {
+      "enum": [
+        "resting_heart_rate",
+        "heart_rate_variability",
+        "respiratory_rate",
+        "blood_oxygen",
+        "body_temperature",
+        "sleep_duration",
+        "sleep_efficiency",
+        "steps",
+        "active_energy",
+        "cardio_fitness",
+        "stress_load"
+      ]
+    },
+    "direction": { "enum": ["above_baseline", "below_baseline"] },
+    "severity": { "enum": ["notable", "marked", "extreme"] },
+    "anomaly": {
+      "description": "A single metric outside its own baseline band. `z_score` is against the owner's trailing distribution over `baseline_days`, not a population norm.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "direction", "severity", "observed", "baseline_mean", "z_score"],
+      "properties": {
+        "metric": { "$ref": "#/$defs/metric" },
+        "direction": { "$ref": "#/$defs/direction" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "observed": { "type": "number" },
+        "baseline_mean": { "type": "number" },
+        "z_score": { "type": "number", "minimum": -20, "maximum": 20 }
+      }
+    },
+    "biometric_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "day",
+        "time_zone",
+        "source_connection_id",
+        "source_provider",
+        "measurement_basis",
+        "confidence",
+        "baseline_days",
+        "readiness_score",
+        "recovery_percent",
+        "strain_load",
+        "resting_heart_rate_bpm",
+        "heart_rate_variability_ms",
+        "respiratory_rate_bpm",
+        "blood_oxygen_percent",
+        "skin_temperature_deviation_c",
+        "steps",
+        "active_energy_kcal",
+        "workout_minutes",
+        "cardio_fitness_vo2max",
+        "anomalies",
+        "generation",
+        "recorded_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "day": { "$ref": "sleep-summary.schema.json#/$defs/civil_date" },
+        "time_zone": { "type": "string", "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$", "maxLength": 64 },
+        "source_connection_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "source_provider": { "$ref": "provider-connection.schema.json#/$defs/provider" },
+        "measurement_basis": { "$ref": "sleep-summary.schema.json#/$defs/measurement_basis" },
+        "confidence": { "$ref": "sleep-summary.schema.json#/$defs/confidence" },
+        "baseline_days": {
+          "description": "How many days of the owner's own history the baselines were computed from. Below the provider's calibration window, anomalies must be suppressed rather than shown with wide error.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650
+        },
+        "readiness_score": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "recovery_percent": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "strain_load": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 1000 }, { "type": "null" }]
+        },
+        "resting_heart_rate_bpm": {
+          "anyOf": [{ "type": "number", "minimum": 20, "maximum": 200 }, { "type": "null" }]
+        },
+        "heart_rate_variability_ms": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 500 }, { "type": "null" }]
+        },
+        "respiratory_rate_bpm": {
+          "anyOf": [{ "type": "number", "minimum": 2, "maximum": 60 }, { "type": "null" }]
+        },
+        "blood_oxygen_percent": {
+          "anyOf": [{ "type": "number", "minimum": 50, "maximum": 100 }, { "type": "null" }]
+        },
+        "skin_temperature_deviation_c": {
+          "anyOf": [{ "type": "number", "minimum": -10, "maximum": 10 }, { "type": "null" }]
+        },
+        "steps": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 500000 }, { "type": "null" }]
+        },
+        "active_energy_kcal": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 30000 }, { "type": "null" }]
+        },
+        "workout_minutes": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1440 }, { "type": "null" }]
+        },
+        "cardio_fitness_vo2max": {
+          "anyOf": [{ "type": "number", "minimum": 5, "maximum": 100 }, { "type": "null" }]
+        },
+        "anomalies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/anomaly" },
+          "maxItems": 16
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "recorded_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  },
+  "$ref": "#/$defs/biometric_summary"
+}

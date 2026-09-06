@@ -15,6 +15,18 @@
     "desktop_notification": { "phase": "idle", "generation": 0, "active_token": null },
     "cloud_notification": { "phase": "idle", "generation": 0, "active_token": null },
     "cloud_reminder_sync": { "phase": "ready", "generation": 2, "active_token": null },
-    "bluetooth": { "phase": "running", "generation": 6, "active_token": 6 }
+    "bluetooth": { "phase": "running", "generation": 6, "active_token": 6 },
+    "briefing": { "phase": "ready", "generation": 2, "active_token": null },
+    "day_plan": { "phase": "ready", "generation": 4, "active_token": null },
+    "tasks": { "phase": "idle", "generation": 0, "active_token": null },
+    "habits": { "phase": "ready", "generation": 1, "active_token": null },
+    "focus": { "phase": "idle", "generation": 0, "active_token": null },
+    "sleep": { "phase": "ready", "generation": 1, "active_token": null },
+    "biometrics": { "phase": "ready", "generation": 1, "active_token": null },
+    "inbox": { "phase": "failed", "generation": 5, "active_token": null },
+    "messages": { "phase": "idle", "generation": 0, "active_token": null },
+    "commute": { "phase": "running", "generation": 2, "active_token": 2 },
+    "portfolio": { "phase": "idle", "generation": 0, "active_token": null },
+    "provider_sync": { "phase": "running", "generation": 9, "active_token": 9 }
   }
 }

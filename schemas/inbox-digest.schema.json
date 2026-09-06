@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/inbox-digest.schema.json",
+  "title": "Happy Wakey inbox digest",
+  "description": "A metadata-only view of what is waiting in the owner's mail. The default authorization is a header-and-label scope (gmail.metadata, Mail.ReadBasic), which is enough to rank senders and count threads without reading a body. `content_class` states which was actually used, and a digest whose class is `metadata_only` must carry no `snippet` on any item; that is checked, not merely documented.",
+  "$defs": {
+    "importance_reason": {
+      "description": "Why an item was surfaced. Every ranked item states at least one; an unexplained ranking is not renderable.",
+      "enum": [
+        "vip_sender",
+        "addressed_directly",
+        "thread_you_started",
+        "awaiting_your_reply",
+        "mentions_deadline",
+        "calendar_invite",
+        "frequent_correspondent",
+        "first_time_sender",
+        "flagged_by_provider",
+        "bulk_or_list"
+      ]
+    },
+    "digest_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "message_ref",
+        "thread_ref",
+        "sender_display",
+        "sender_domain",
+        "subject",
+        "received_at",
+        "is_unread",
+        "is_calendar_invite",
+        "has_attachment",
+        "labels",
+        "importance",
+        "importance_reasons",
+        "snippet"
+      ],
+      "properties": {
+        "message_ref": {
+          "description": "Provider-opaque message identifier, used to deep link back. Never an address or a body.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "thread_ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "sender_display": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "sender_domain": { "type": "string", "minLength": 1, "maxLength": 253 },
+        "subject": { "type": "string", "maxLength": 500 },
+        "received_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "is_unread": { "type": "boolean" },
+        "is_calendar_invite": { "type": "boolean" },
+        "has_attachment": { "type": "boolean" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "uniqueItems": true,
+          "maxItems": 30
+        },
+        "importance": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "importance_reasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/importance_reason" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 10
+        },
+        "snippet": {
+          "description": "Body preview. Permitted only when the digest's content_class is full_content.",
+          "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }]
+        }
+      }
+    },
+    "account_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_connection_id",
+        "provider",
+        "account_label",
+        "content_class",
+        "status",
+        "unread_total",
+        "unread_since_window_start",
+        "items",
+        "truncated"
+      ],
+      "properties": {
+        "source_connection_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "provider": { "$ref": "provider-connection.schema.json#/$defs/provider" },
+        "account_label": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "content_class": { "$ref": "provider-connection.schema.json#/$defs/content_class" },
+        "status": { "$ref": "provider-connection.schema.json#/$defs/status" },
+        "unread_total": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "unread_since_window_start": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/digest_item" },
+          "maxItems": 50
+        },
+        "truncated": {
+          "description": "True when the account holds more qualifying items than `items` carries.",
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "content_class": { "enum": ["none", "counts_only", "metadata_only"] } },
+            "required": ["content_class"]
+          },
+          "then": {
+            "properties": {
+              "items": { "items": { "properties": { "snippet": { "type": "null" } } } }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "content_class": { "enum": ["none", "counts_only"] } },
+            "required": ["content_class"]
+          },
+          "then": { "properties": { "items": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "inbox_digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "generated_at", "window_start", "window_end", "accounts", "vip_domains", "generation"],
+      "properties": {
+        "schema": { "const": "happy-wakey/inbox-digest/v1" },
+        "generated_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "window_start": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "window_end": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "accounts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/account_digest" },
+          "maxItems": 20
+        },
+        "vip_domains": {
+          "description": "Owner-declared important senders, kept as domains rather than addresses so the digest carries no personal address book.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 253 },
+          "uniqueItems": true,
+          "maxItems": 200
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" }
+      }
+    }
+  },
+  "$ref": "#/$defs/inbox_digest"
+}

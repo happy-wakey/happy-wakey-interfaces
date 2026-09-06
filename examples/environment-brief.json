@@ -1,0 +1,48 @@
+{
+  "schema": "happy-wakey/environment-brief/v1",
+  "generated_at": "2026-09-05T12:00:00Z",
+  "location": { "label": "Austin, TX", "latitude": 30.27, "longitude": -97.74, "time_zone": "America/Chicago" },
+  "current": {
+    "condition": "partly_cloudy",
+    "temperature_c": 24.4,
+    "feels_like_c": 25.8,
+    "relative_humidity_percent": 71,
+    "wind_speed_kph": 11.2,
+    "wind_gust_kph": 24.1,
+    "precipitation_mm": 0,
+    "precipitation_probability_percent": 10,
+    "cloud_cover_percent": 42,
+    "observed_at": "2026-09-05T11:50:00Z"
+  },
+  "hourly": [
+    { "starts_at": "2026-09-05T12:00:00Z", "condition": "partly_cloudy", "temperature_c": 25.1, "precipitation_probability_percent": 10 },
+    { "starts_at": "2026-09-05T13:00:00Z", "condition": "clear", "temperature_c": 27.0, "precipitation_probability_percent": 5 }
+  ],
+  "high_temperature_c": 34.2,
+  "low_temperature_c": 22.8,
+  "daylight": {
+    "civil_dawn_at": "2026-09-05T11:47:00Z",
+    "sunrise_at": "2026-09-05T12:11:00Z",
+    "sunset_at": "2026-09-06T00:53:00Z",
+    "civil_dusk_at": "2026-09-06T01:17:00Z",
+    "daylight_minutes": 762,
+    "daylight_change_minutes": -2
+  },
+  "air_quality": { "index": 44, "scale": "us_aqi", "category": "good", "dominant_pollutant": "ozone", "observed_at": "2026-09-05T11:00:00Z" },
+  "uv_index_max": 8.4,
+  "pollen": [{ "kind": "weed", "level": "moderate", "index": 3.2 }],
+  "alerts": [],
+  "commutes": [
+    {
+      "origin_label": "Home",
+      "destination_label": "Office",
+      "mode": "drive",
+      "duration_minutes": 27,
+      "typical_minutes": 19,
+      "delay_minutes": 8,
+      "leave_by_at": "2026-09-05T14:33:00Z",
+      "for_block_id": "3b1c6099-5d82-4f3a-a162-708d4e2f3006"
+    }
+  ],
+  "generation": 3
+}

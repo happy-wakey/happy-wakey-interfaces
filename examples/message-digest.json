@@ -1,0 +1,50 @@
+{
+  "schema": "happy-wakey/message-digest/v1",
+  "generated_at": "2026-09-05T12:00:00Z",
+  "window_start": "2026-09-04T22:00:00Z",
+  "window_end": "2026-09-05T12:00:00Z",
+  "platforms": [
+    {
+      "platform": "telegram",
+      "access_level": "full_read",
+      "source_connection_id": "ad5fa141-9f7e-4e6a-d052-6e05e8161aba",
+      "status": "connected",
+      "unread_total": 4,
+      "threads": [
+        {
+          "thread_ref": "-1001234567890",
+          "counterpart_display": "Site build crew",
+          "is_group": true,
+          "unread_count": 3,
+          "last_message_at": "2026-09-05T10:51:00Z",
+          "preview": "Concrete pour moved to Monday",
+          "mentions_owner": true,
+          "deep_link": "https://t.me/c/1234567890/455"
+        }
+      ],
+      "truncated": false,
+      "completeness_note": null
+    },
+    {
+      "platform": "slack",
+      "access_level": "throttled_read",
+      "source_connection_id": "be60b252-a08f-4f7b-e163-7f16f9272bcb",
+      "status": "connected",
+      "unread_total": 9,
+      "threads": [],
+      "truncated": true,
+      "completeness_note": "Non-Marketplace app: history reads are capped at one request per minute and fifteen objects per request, so this list is a sample rather than a complete view."
+    },
+    {
+      "platform": "whatsapp",
+      "access_level": "policy_unavailable",
+      "source_connection_id": null,
+      "status": "policy_unavailable",
+      "unread_total": null,
+      "threads": [],
+      "truncated": false,
+      "completeness_note": "No third-party API exposes a person's own WhatsApp conversations; only business-owned numbers are readable."
+    }
+  ],
+  "generation": 5
+}

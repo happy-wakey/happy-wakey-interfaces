@@ -98,3 +98,294 @@ CREATE TABLE IF NOT EXISTS happy_wakey_async_operations (
 
 CREATE INDEX IF NOT EXISTS happy_wakey_async_operations_pending
   ON happy_wakey_async_operations (status, expires_at, created_at);
+
+-- ---------------------------------------------------------------------------
+-- Morning dashboard desired state.
+--
+-- Two rules govern everything below. First, no provider credential appears in
+-- any column: a connection carries `credential_ref`, an opaque handle resolved
+-- inside the secret boundary, and the polyglot gate asserts that no column
+-- named for a token, key, secret or password exists here. Second, physiological
+-- records are owner-partitioned and deleted with their source connection, so a
+-- disconnect is a real erasure rather than a hidden retention.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS happy_wakey_provider_connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  auth_kind TEXT NOT NULL,
+  content_class TEXT NOT NULL,
+  feed_class TEXT NOT NULL,
+  requested_capabilities JSONB NOT NULL DEFAULT '[]'::JSONB,
+  granted_capabilities JSONB NOT NULL DEFAULT '[]'::JSONB,
+  status TEXT NOT NULL DEFAULT 'not_connected',
+  credential_ref TEXT NULL,
+  last_sync_at TIMESTAMPTZ NULL,
+  next_sync_after TIMESTAMPTZ NULL,
+  last_failure JSONB NULL,
+  rate_budget JSONB NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_provider_domain CHECK (domain IN ('calendar','mail','messaging','health','markets','environment','tasks','news','commute')),
+  CONSTRAINT happy_wakey_provider_content_class CHECK (content_class IN ('none','counts_only','metadata_only','full_content')),
+  CONSTRAINT happy_wakey_provider_feed_class CHECK (feed_class IN ('real_time','delayed','end_of_day','on_sync','unknown')),
+  CONSTRAINT happy_wakey_provider_status CHECK (status IN ('not_connected','pending_consent','connected','degraded','rate_limited','expired','revoked','unsupported_platform','policy_unavailable')),
+  CONSTRAINT happy_wakey_provider_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, provider, display_name)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_provider_connections_due
+  ON happy_wakey_provider_connections (status, next_sync_after);
+CREATE INDEX IF NOT EXISTS happy_wakey_provider_connections_owner
+  ON happy_wakey_provider_connections (owner_id, domain, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_sleep_summaries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  source_connection_id UUID NOT NULL REFERENCES happy_wakey_provider_connections(id) ON DELETE CASCADE,
+  night_of DATE NOT NULL,
+  time_zone TEXT NOT NULL,
+  measurement_basis TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  bedtime_at TIMESTAMPTZ NOT NULL,
+  wake_at TIMESTAMPTZ NOT NULL,
+  time_in_bed_minutes INT4 NOT NULL,
+  asleep_minutes INT4 NOT NULL,
+  sleep_latency_minutes INT4 NULL,
+  awakenings INT4 NULL,
+  efficiency_percent DECIMAL(5,2) NULL,
+  stage_minutes JSONB NULL,
+  overnight_vitals JSONB NOT NULL DEFAULT '{}'::JSONB,
+  sleep_score INT4 NULL,
+  sleep_debt_minutes INT4 NULL,
+  regularity_percent DECIMAL(5,2) NULL,
+  recommended_bedtime_local TIME NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_sleep_basis CHECK (measurement_basis IN ('wearable','phone','modeled','manual')),
+  CONSTRAINT happy_wakey_sleep_confidence CHECK (confidence IN ('high','medium','low','insufficient_data')),
+  CONSTRAINT happy_wakey_sleep_minutes CHECK (asleep_minutes >= 0 AND asleep_minutes <= time_in_bed_minutes AND time_in_bed_minutes <= 1440),
+  CONSTRAINT happy_wakey_sleep_score_range CHECK (sleep_score IS NULL OR (sleep_score >= 0 AND sleep_score <= 100)),
+  CONSTRAINT happy_wakey_sleep_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, source_connection_id, night_of)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_sleep_summaries_owner_night
+  ON happy_wakey_sleep_summaries (owner_id, night_of DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_biometric_summaries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  source_connection_id UUID NOT NULL REFERENCES happy_wakey_provider_connections(id) ON DELETE CASCADE,
+  day DATE NOT NULL,
+  time_zone TEXT NOT NULL,
+  measurement_basis TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  baseline_days INT4 NOT NULL DEFAULT 0,
+  readiness_score INT4 NULL,
+  recovery_percent DECIMAL(5,2) NULL,
+  strain_load DECIMAL(8,3) NULL,
+  resting_heart_rate_bpm DECIMAL(5,1) NULL,
+  heart_rate_variability_ms DECIMAL(6,1) NULL,
+  respiratory_rate_bpm DECIMAL(4,1) NULL,
+  blood_oxygen_percent DECIMAL(4,1) NULL,
+  skin_temperature_deviation_c DECIMAL(4,2) NULL,
+  steps INT4 NULL,
+  active_energy_kcal DECIMAL(8,2) NULL,
+  workout_minutes INT4 NULL,
+  cardio_fitness_vo2max DECIMAL(4,1) NULL,
+  anomalies JSONB NOT NULL DEFAULT '[]'::JSONB,
+  generation INT8 NOT NULL DEFAULT 0,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_biometric_basis CHECK (measurement_basis IN ('wearable','phone','modeled','manual')),
+  CONSTRAINT happy_wakey_biometric_confidence CHECK (confidence IN ('high','medium','low','insufficient_data')),
+  CONSTRAINT happy_wakey_biometric_readiness CHECK (readiness_score IS NULL OR (readiness_score >= 0 AND readiness_score <= 100)),
+  CONSTRAINT happy_wakey_biometric_baseline CHECK (baseline_days >= 0),
+  CONSTRAINT happy_wakey_biometric_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, source_connection_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_biometric_summaries_owner_day
+  ON happy_wakey_biometric_summaries (owner_id, day DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_day_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  day DATE NOT NULL,
+  time_zone TEXT NOT NULL,
+  working_hours_start_local TIME NOT NULL,
+  working_hours_end_local TIME NOT NULL,
+  capacity JSONB NOT NULL DEFAULT '{}'::JSONB,
+  energy_curve JSONB NOT NULL DEFAULT '[]'::JSONB,
+  conflicts JSONB NOT NULL DEFAULT '[]'::JSONB,
+  rollovers JSONB NOT NULL DEFAULT '[]'::JSONB,
+  planned_at TIMESTAMPTZ NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_day_plan_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_plan_blocks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  day_plan_id UUID NOT NULL REFERENCES happy_wakey_day_plans(id) ON DELETE CASCADE,
+  owner_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  title TEXT NOT NULL,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  is_flexible BOOL NOT NULL DEFAULT true,
+  is_all_day BOOL NOT NULL DEFAULT false,
+  priority INT4 NOT NULL DEFAULT 2,
+  linked_entity_id UUID NULL,
+  source_connection_id UUID NULL REFERENCES happy_wakey_provider_connections(id) ON DELETE SET NULL,
+  location_label TEXT NULL,
+  join_url TEXT NULL,
+  energy_fit INT4 NULL,
+  completed_at TIMESTAMPTZ NULL,
+  CONSTRAINT happy_wakey_block_kind CHECK (kind IN ('calendar_event','task','habit','focus','break','meal','commute','buffer','wind_down','sleep')),
+  CONSTRAINT happy_wakey_block_origin CHECK (origin IN ('external_mirror','happy_wakey','owner')),
+  CONSTRAINT happy_wakey_block_span CHECK (ends_at >= starts_at),
+  CONSTRAINT happy_wakey_block_priority CHECK (priority >= 0 AND priority <= 4),
+  CONSTRAINT happy_wakey_block_energy_fit CHECK (energy_fit IS NULL OR (energy_fit >= 0 AND energy_fit <= 100)),
+  -- A mirrored upstream event is never rewritable by the planner, so it can
+  -- never be marked flexible. Enforced here rather than trusted to callers.
+  CONSTRAINT happy_wakey_block_mirror_is_fixed CHECK (origin <> 'external_mirror' OR is_flexible = false)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_plan_blocks_owner_span
+  ON happy_wakey_plan_blocks (owner_id, starts_at);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_habits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  cadence TEXT NOT NULL,
+  target_per_period INT4 NOT NULL DEFAULT 1,
+  weekdays JSONB NOT NULL DEFAULT '[]'::JSONB,
+  preferred_window_start_local TIME NOT NULL,
+  preferred_window_end_local TIME NOT NULL,
+  duration_minutes INT4 NOT NULL,
+  is_flexible BOOL NOT NULL DEFAULT true,
+  enabled BOOL NOT NULL DEFAULT true,
+  time_zone TEXT NOT NULL,
+  current_streak INT4 NOT NULL DEFAULT 0,
+  longest_streak INT4 NOT NULL DEFAULT 0,
+  tags JSONB NOT NULL DEFAULT '[]'::JSONB,
+  generation INT8 NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_habit_cadence CHECK (cadence IN ('daily','weekly','monthly','weekday_set','times_per_week')),
+  CONSTRAINT happy_wakey_habit_duration CHECK (duration_minutes >= 1 AND duration_minutes <= 1440),
+  CONSTRAINT happy_wakey_habit_target CHECK (target_per_period >= 1 AND target_per_period <= 100),
+  CONSTRAINT happy_wakey_habit_streaks CHECK (current_streak >= 0 AND longest_streak >= current_streak),
+  CONSTRAINT happy_wakey_habit_generation CHECK (generation >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_habits_owner_enabled
+  ON happy_wakey_habits (owner_id, enabled, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_habit_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  habit_id UUID NOT NULL REFERENCES happy_wakey_habits(id) ON DELETE CASCADE,
+  owner_id TEXT NOT NULL,
+  day DATE NOT NULL,
+  state TEXT NOT NULL DEFAULT 'pending',
+  completed_at TIMESTAMPTZ NULL,
+  block_id UUID NULL REFERENCES happy_wakey_plan_blocks(id) ON DELETE SET NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_habit_entry_state CHECK (state IN ('pending','completed','skipped','missed')),
+  -- The completion timestamp and the completed state are one fact, not two.
+  CONSTRAINT happy_wakey_habit_entry_completion CHECK (
+    (state = 'completed' AND completed_at IS NOT NULL)
+    OR (state <> 'completed' AND completed_at IS NULL)
+  ),
+  CONSTRAINT happy_wakey_habit_entry_generation CHECK (generation >= 0),
+  UNIQUE (habit_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_habit_entries_owner_day
+  ON happy_wakey_habit_entries (owner_id, day DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_briefing_compositions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  for_day DATE NOT NULL,
+  time_zone TEXT NOT NULL,
+  headline TEXT NOT NULL,
+  sections JSONB NOT NULL DEFAULT '[]'::JSONB,
+  sections_withheld JSONB NOT NULL DEFAULT '[]'::JSONB,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  delivered_at TIMESTAMPTZ NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  CONSTRAINT happy_wakey_briefing_composition_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, for_day)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_briefing_compositions_owner_day
+  ON happy_wakey_briefing_compositions (owner_id, for_day DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_module_layouts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  is_default BOOL NOT NULL DEFAULT false,
+  theme TEXT NOT NULL DEFAULT 'system',
+  accent TEXT NOT NULL DEFAULT '#f2a03d',
+  density TEXT NOT NULL DEFAULT 'comfortable',
+  briefing_delivery_local TIME NULL,
+  quiet_hours_start_local TIME NULL,
+  quiet_hours_end_local TIME NULL,
+  modules JSONB NOT NULL DEFAULT '[]'::JSONB,
+  generation INT8 NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_layout_theme CHECK (theme IN ('system','light','dark','night_shift')),
+  CONSTRAINT happy_wakey_layout_density CHECK (density IN ('comfortable','compact')),
+  CONSTRAINT happy_wakey_layout_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, name)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS happy_wakey_module_layouts_one_default
+  ON happy_wakey_module_layouts (owner_id) WHERE is_default;
+
+CREATE TABLE IF NOT EXISTS happy_wakey_watchlist_symbols (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  position INT4 NOT NULL DEFAULT 0,
+  alert_direction TEXT NULL,
+  alert_threshold DECIMAL(18,6) NULL,
+  generation INT8 NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_watchlist_alert CHECK (
+    (alert_direction IS NULL AND alert_threshold IS NULL)
+    OR (alert_direction IN ('above','below','percent_move') AND alert_threshold IS NOT NULL)
+  ),
+  CONSTRAINT happy_wakey_watchlist_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_vip_senders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  -- Domains rather than addresses: the dashboard ranks senders without holding
+  -- the owner's address book.
+  sender_domain TEXT NOT NULL,
+  label TEXT NULL,
+  weight INT4 NOT NULL DEFAULT 50,
+  generation INT8 NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_vip_weight CHECK (weight >= 0 AND weight <= 100),
+  CONSTRAINT happy_wakey_vip_generation CHECK (generation >= 0),
+  UNIQUE (owner_id, sender_domain)
+);

@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/provider-connection.schema.json",
+  "title": "Happy Wakey provider connection",
+  "description": "A single upstream data source the owner has connected. This contract never carries a provider secret: `credential_ref` names an opaque handle resolved inside the secret boundary. Every provider declares the capabilities it may produce and the content class it is authorized to read, so a client can render an honest empty state instead of inventing data.",
+  "$defs": {
+    "provider": {
+      "enum": [
+        "google_calendar",
+        "microsoft_graph_calendar",
+        "caldav",
+        "ics_feed",
+        "gmail",
+        "microsoft_graph_mail",
+        "imap",
+        "slack",
+        "telegram",
+        "apple_healthkit",
+        "android_health_connect",
+        "oura",
+        "whoop",
+        "google_health",
+        "garmin",
+        "withings",
+        "health_aggregator",
+        "alpaca",
+        "finnhub",
+        "massive",
+        "snaptrade",
+        "open_meteo",
+        "openweather",
+        "todoist",
+        "ticktick",
+        "linear",
+        "jira",
+        "asana",
+        "github",
+        "notion",
+        "newsapi",
+        "maps_commute"
+      ]
+    },
+    "domain": {
+      "enum": [
+        "calendar",
+        "mail",
+        "messaging",
+        "health",
+        "markets",
+        "environment",
+        "tasks",
+        "news",
+        "commute"
+      ]
+    },
+    "auth_kind": {
+      "enum": [
+        "oauth2_authorization_code",
+        "oauth2_pkce",
+        "oauth2_device",
+        "oauth2_client_credentials",
+        "api_key",
+        "app_password",
+        "personal_access_token",
+        "on_device_permission",
+        "public_unauthenticated"
+      ]
+    },
+    "capability": {
+      "description": "A single kind of data this connection is permitted to produce. Absence is authoritative: a capability not listed here must never be synthesized downstream.",
+      "enum": [
+        "calendar_events_read",
+        "calendar_events_write",
+        "calendar_freebusy",
+        "mail_metadata_read",
+        "mail_body_read",
+        "mail_write",
+        "message_threads_read",
+        "message_unread_count",
+        "sleep_sessions",
+        "sleep_stages",
+        "readiness_score",
+        "recovery_score",
+        "sleep_debt",
+        "heart_rate",
+        "heart_rate_variability",
+        "resting_heart_rate",
+        "respiratory_rate",
+        "blood_oxygen",
+        "body_temperature",
+        "steps",
+        "workouts",
+        "energy_expenditure",
+        "cardio_fitness",
+        "stress_load",
+        "portfolio_holdings",
+        "quotes",
+        "earnings_calendar",
+        "market_news",
+        "weather_current",
+        "weather_forecast",
+        "weather_alerts",
+        "air_quality",
+        "pollen",
+        "uv_index",
+        "daylight",
+        "tasks_read",
+        "tasks_write",
+        "news_headlines",
+        "commute_eta"
+      ]
+    },
+    "content_class": {
+      "description": "How much of the upstream payload this connection is authorized to read. `metadata_only` is the default for mail and messaging because header-and-label scopes (gmail.metadata, Mail.ReadBasic) satisfy the dashboard without the compliance surface of body access.",
+      "enum": ["none", "counts_only", "metadata_only", "full_content"]
+    },
+    "feed_class": {
+      "description": "Timeliness guarantee the upstream licence actually grants. Never widen this client side.",
+      "enum": ["real_time", "delayed", "end_of_day", "on_sync", "unknown"]
+    },
+    "status": {
+      "description": "`unsupported_platform` records a capability the running platform cannot offer at all (HealthKit off Apple platforms, Health Connect off Android). `policy_unavailable` records a source that no third party may read at any price. Both are terminal until the environment changes and must not be retried as failures.",
+      "enum": [
+        "not_connected",
+        "pending_consent",
+        "connected",
+        "degraded",
+        "rate_limited",
+        "expired",
+        "revoked",
+        "unsupported_platform",
+        "policy_unavailable"
+      ]
+    },
+    "sync_failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable", "occurred_at", "retry_after_seconds"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,63}$" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "retryable": { "type": "boolean" },
+        "occurred_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "retry_after_seconds": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0, "maximum": 604800 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "rate_budget": {
+      "description": "The upstream quota this connection must stay inside. Declared so the scheduler can pace itself rather than discovering a 429.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "window_seconds", "consumed", "resets_at"],
+      "properties": {
+        "requests": { "type": "integer", "minimum": 1, "maximum": 10000000 },
+        "window_seconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "consumed": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "resets_at": {
+          "anyOf": [
+            { "$ref": "common.schema.json#/$defs/timestamp" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "provider_connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "domain",
+        "display_name",
+        "auth_kind",
+        "content_class",
+        "feed_class",
+        "requested_capabilities",
+        "granted_capabilities",
+        "status",
+        "credential_ref",
+        "last_sync_at",
+        "next_sync_after",
+        "last_failure",
+        "rate_budget",
+        "generation",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "provider": { "$ref": "#/$defs/provider" },
+        "domain": { "$ref": "#/$defs/domain" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "auth_kind": { "$ref": "#/$defs/auth_kind" },
+        "content_class": { "$ref": "#/$defs/content_class" },
+        "feed_class": { "$ref": "#/$defs/feed_class" },
+        "requested_capabilities": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/capability" },
+          "uniqueItems": true,
+          "maxItems": 40
+        },
+        "granted_capabilities": {
+          "description": "Must be a subset of requested_capabilities. Providers with per-scope consent (Oura, HealthKit) routinely grant less than was asked for; downstream code reads this list, never the requested one.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/capability" },
+          "uniqueItems": true,
+          "maxItems": 40
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "credential_ref": {
+          "description": "Opaque handle into the secret boundary. Never a token, key, cookie, or refresh credential.",
+          "anyOf": [
+            { "type": "string", "pattern": "^[A-Za-z0-9_.:/-]{8,128}$" },
+            { "type": "null" }
+          ]
+        },
+        "last_sync_at": {
+          "anyOf": [
+            { "$ref": "common.schema.json#/$defs/timestamp" },
+            { "type": "null" }
+          ]
+        },
+        "next_sync_after": {
+          "anyOf": [
+            { "$ref": "common.schema.json#/$defs/timestamp" },
+            { "type": "null" }
+          ]
+        },
+        "last_failure": {
+          "anyOf": [
+            { "$ref": "#/$defs/sync_failure" },
+            { "type": "null" }
+          ]
+        },
+        "rate_budget": {
+          "anyOf": [
+            { "$ref": "#/$defs/rate_budget" },
+            { "type": "null" }
+          ]
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "created_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "connect_provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transition_id", "provider", "display_name", "requested_capabilities", "content_class"],
+      "properties": {
+        "transition_id": { "$ref": "common.schema.json#/$defs/transition_id" },
+        "provider": { "$ref": "#/$defs/provider" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "requested_capabilities": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/capability" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 40
+        },
+        "content_class": { "$ref": "#/$defs/content_class" }
+      }
+    }
+  },
+  "$ref": "#/$defs/provider_connection"
+}

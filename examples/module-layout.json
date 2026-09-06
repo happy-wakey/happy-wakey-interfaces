@@ -1,0 +1,20 @@
+{
+  "id": "03b50707-f5d4-4ce0-3618-c46b1e7c7b10",
+  "name": "Weekday morning",
+  "is_default": true,
+  "theme": "system",
+  "accent": "#f2a03d",
+  "density": "comfortable",
+  "briefing_delivery_local": "06:45",
+  "quiet_hours_start_local": "22:00",
+  "quiet_hours_end_local": "06:30",
+  "modules": [
+    { "module": "briefing", "visible": true, "position": 0, "size": "full", "contexts": ["morning"], "refresh_interval_seconds": 900, "collapsed": false },
+    { "module": "day_plan", "visible": true, "position": 1, "size": "wide", "contexts": ["morning", "workday"], "refresh_interval_seconds": 300, "collapsed": false },
+    { "module": "sleep", "visible": true, "position": 2, "size": "standard", "contexts": ["morning"], "refresh_interval_seconds": 3600, "collapsed": false },
+    { "module": "inbox", "visible": true, "position": 3, "size": "standard", "contexts": ["morning", "workday"], "refresh_interval_seconds": 600, "collapsed": false },
+    { "module": "markets", "visible": false, "position": 4, "size": "compact", "contexts": ["always"], "refresh_interval_seconds": 900, "collapsed": true }
+  ],
+  "generation": 9,
+  "updated_at": "2026-09-05T12:06:00Z"
+}

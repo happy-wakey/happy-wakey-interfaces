@@ -1,0 +1,129 @@
+{
+  "id": "14c61818-0605-4df1-4729-d57c2f8d8c21",
+  "schema": "happy-wakey/briefing-composition/v1",
+  "for_day": "2026-09-05",
+  "time_zone": "America/Chicago",
+  "generated_at": "2026-09-05T11:45:00Z",
+  "delivered_at": "2026-09-05T11:45:03Z",
+  "headline": "Short night and a lower readiness score - one hard meeting, and your best focus window is after it.",
+  "sections": [
+    {
+      "kind": "sleep",
+      "rank": 0,
+      "state": "ready",
+      "summary": "6h 41m asleep, 96 minutes of sleep debt carried in. Grogginess should clear by about 08:00.",
+      "items": [
+        {
+          "id": "25d72929-1716-4e02-583a-e68d309e9d32",
+          "rank": 0,
+          "headline": "Sleep debt is up to 1h 36m",
+          "detail": "Three shorter nights in a row. An earlier wind-down tonight pays most of it back.",
+          "occurs_at": null,
+          "reasons": [
+            "outside_baseline"
+          ],
+          "entity_ref": "9d2c7a41-0f52-4f8b-a0d3-6b21c9e4f002",
+          "deep_link": null
+        }
+      ],
+      "provenance": [
+        {
+          "source_connection_id": "6f1b6f0e-5b3a-4a26-9c1e-2ac1a4f2d001",
+          "provider": "oura",
+          "content_class": "full_content",
+          "feed_class": "on_sync",
+          "fetched_at": "2026-09-05T11:42:10Z",
+          "staleness_seconds": 170
+        }
+      ],
+      "state_detail": null
+    },
+    {
+      "kind": "schedule",
+      "rank": 1,
+      "state": "ready",
+      "summary": "One meeting today: design review at 10:00, and traffic is running eight minutes long.",
+      "items": [
+        {
+          "id": "36e83a3a-2827-4f13-694b-f79e41afad43",
+          "rank": 0,
+          "headline": "Design review at 10:00",
+          "detail": "Leave by 09:33 to arrive on time.",
+          "occurs_at": "2026-09-05T15:00:00Z",
+          "reasons": [
+            "next_up",
+            "unusual_delay"
+          ],
+          "entity_ref": "3b1c6099-5d82-4f3a-a162-708d4e2f3006",
+          "deep_link": "https://example.zoom.us/j/000000"
+        }
+      ],
+      "provenance": [
+        {
+          "source_connection_id": "7a2c7f1f-6c4b-4b37-ad2f-3bd2b5f3e007",
+          "provider": "google_calendar",
+          "content_class": "full_content",
+          "feed_class": "on_sync",
+          "fetched_at": "2026-09-05T11:44:00Z",
+          "staleness_seconds": 60
+        }
+      ],
+      "state_detail": null
+    },
+    {
+      "kind": "inbox",
+      "rank": 2,
+      "state": "degraded",
+      "summary": "One message needs you today. Your work account could not be read this morning.",
+      "items": [
+        {
+          "id": "47f94b4b-3938-4024-795c-08af52b0be54",
+          "rank": 0,
+          "headline": "Dana Whitfield is waiting on a signature",
+          "detail": "Mentions Friday. You started the thread and have not replied.",
+          "occurs_at": "2026-09-05T06:14:00Z",
+          "reasons": [
+            "vip_sender",
+            "awaiting_your_reply",
+            "deadline_today"
+          ],
+          "entity_ref": null,
+          "deep_link": null
+        }
+      ],
+      "provenance": [
+        {
+          "source_connection_id": "8b3d8f2f-7d5c-4c48-be30-4ce3c6f4e008",
+          "provider": "gmail",
+          "content_class": "metadata_only",
+          "feed_class": "on_sync",
+          "fetched_at": "2026-09-05T11:43:00Z",
+          "staleness_seconds": 120
+        }
+      ],
+      "state_detail": "The work account is rate limited by the provider until 12:15; only its unread count is current."
+    },
+    {
+      "kind": "messages",
+      "rank": 3,
+      "state": "unavailable",
+      "summary": "Direct messages are not being read.",
+      "items": [],
+      "provenance": [],
+      "state_detail": "No messaging provider is connected. WhatsApp, Instagram, LinkedIn and iMessage cannot be read by any third-party app; Slack and Telegram can be connected."
+    },
+    {
+      "kind": "markets",
+      "rank": 4,
+      "state": "not_connected",
+      "summary": "No watchlist yet.",
+      "items": [],
+      "provenance": [],
+      "state_detail": "Connect a market data provider to see quotes before the open."
+    }
+  ],
+  "sections_withheld": [
+    "news"
+  ],
+  "generation": 2
+}

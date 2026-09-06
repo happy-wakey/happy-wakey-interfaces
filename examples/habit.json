@@ -1,0 +1,19 @@
+{
+  "id": "f2a4f696-e4c3-4bdf-2507-b35a0d6b6a0f",
+  "name": "Morning walk",
+  "cadence": "times_per_week",
+  "target_per_period": 5,
+  "weekdays": [],
+  "preferred_window_start_local": "07:00",
+  "preferred_window_end_local": "09:00",
+  "duration_minutes": 30,
+  "is_flexible": true,
+  "enabled": true,
+  "time_zone": "America/Chicago",
+  "current_streak": 11,
+  "longest_streak": 34,
+  "tags": ["movement", "outdoors"],
+  "generation": 6,
+  "created_at": "2026-05-14T13:00:00Z",
+  "updated_at": "2026-09-05T12:04:00Z"
+}

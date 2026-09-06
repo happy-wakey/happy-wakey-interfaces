@@ -1,0 +1,20 @@
+{
+  "id": "6f1b6f0e-5b3a-4a26-9c1e-2ac1a4f2d001",
+  "provider": "oura",
+  "domain": "health",
+  "display_name": "Oura Ring",
+  "auth_kind": "oauth2_authorization_code",
+  "content_class": "full_content",
+  "feed_class": "on_sync",
+  "requested_capabilities": ["sleep_sessions", "sleep_stages", "readiness_score", "heart_rate_variability", "resting_heart_rate", "blood_oxygen", "body_temperature"],
+  "granted_capabilities": ["sleep_sessions", "sleep_stages", "readiness_score", "heart_rate_variability", "resting_heart_rate"],
+  "status": "connected",
+  "credential_ref": "vault:hw/oura/6f1b6f0e",
+  "last_sync_at": "2026-09-05T11:42:10Z",
+  "next_sync_after": "2026-09-05T12:42:10Z",
+  "last_failure": null,
+  "rate_budget": { "requests": 5000, "window_seconds": 300, "consumed": 12, "resets_at": "2026-09-05T11:47:00Z" },
+  "generation": 3,
+  "created_at": "2026-08-01T09:00:00Z",
+  "updated_at": "2026-09-05T11:42:10Z"
+}

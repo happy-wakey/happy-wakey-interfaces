@@ -50,6 +50,69 @@ message bodies.
 - WebSocket, persistent TLS/TCP, and NATS carry one sequenced realtime envelope
   with resumable delivery and explicit acknowledgement semantics.
 
+## Delivery and composition are two layers, not two briefings
+
+`morning-briefing` is the **delivery** contract: the cards a client renders,
+each with its usefulness decision and its safe deep link. It is the only
+briefing shape that goes on the wire to a client.
+
+`briefing-composition` is the **input** layer beneath it: what each domain
+contributed to a given morning, in what state, and from which provider. It
+exists so a card can answer "why am I seeing this", and so a source that could
+not be read is recorded as an explicit gap rather than quietly vanishing from
+the output. A composition section in any state other than `ready` carries no
+items, and every ready section names its provenance; the contract validator
+checks both with counter-examples that must be rejected.
+
+The two must not converge into one object and must not both be delivered. If a
+field belongs to what the reader sees, it belongs to `morning-briefing`; if it
+belongs to how the briefing was assembled, it belongs to `briefing-composition`.
+
+## Composition domains
+
+The domains a briefing is composed from, each with a schema, a Rust type, a
+conformance fixture and, where it is durable, a row in the declarative SQL:
+
+| Contract | What it owns |
+| --- | --- |
+| `provider-connection` | Every upstream source, the capabilities actually granted, and the quota it must stay inside |
+| `sleep-summary` | One night, normalized across HealthKit, Health Connect, Oura, WHOOP, Google Health, Garmin and Withings |
+| `biometric-summary` | One day of physiology and its deviation from the owner's own baseline |
+| `day-plan` | The day as one ordered ribbon of blocks, with capacity arithmetic and a predicted energy curve |
+| `habit` | Recurring commitments as schedulable, defensible objects rather than checkboxes |
+| `inbox-digest` | What is waiting in the mail, metadata-only by default |
+| `message-digest` | What is waiting in direct messages, with the access level each platform actually permits |
+| `market-watch` | Watchlist, holdings and market events, each quote carrying the timeliness its licence grants |
+| `environment-brief` | Weather, daylight, air quality and the commute about to be made |
+| `module-layout` | How the owner arranged the surface, and each module's refresh floor |
+
+### Composition safety rules
+
+These are checked by counter-example in `scripts/validate_contracts.py` rather
+than trusted to prose.
+
+- **Absence is data.** A composition section, a mail account and a messaging
+  platform each carry a state meaning "this could not be read here", and a
+  section that is not `ready` carries no items.
+- **Authorization travels with the payload.** `content_class` and `feed_class`
+  record what consent and licence actually granted, so a digest read under a
+  header-only mail scope cannot carry a body preview, a counts-only account
+  cannot carry items, and a delayed quote cannot be relabelled live.
+- **Policy is encoded, not documented.** `MessageAccessLevel` separates a
+  sanctioned user-level API from a rate-capped one, from a badge-only source,
+  from a platform no third party may read at any tier. This is what keeps the
+  connector list in `typespec/main.tsp` honest: a connector may be *named*
+  there while its real access level is `policy_unavailable`.
+- **No credential enters the contract.** A connection carries `credential_ref`,
+  an opaque handle into the secret boundary, and the validator asserts that no
+  column named for a token, key, secret, password or bearer exists in the
+  declarative SQL.
+
+Physiological records are deliberately absent from the sync envelope's
+`collection` enum. They are read per device from the platform health store
+under their own consent and are not replicated through a general-purpose change
+log; adding them needs its own review, not a new enum value.
+
 The existing Rust/Qt and Flutter app machines remain the authorities for their
 native UI/effect state. `AppSnapshot` mirrors that established contract so
 services and clients cannot invent a second representation. The independent
@@ -57,10 +120,16 @@ services and clients cannot invent a second representation. The independent
 suspended while an occurrence is still scheduled, so the two machines must
 never be collapsed into one set of booleans.
 
-The app snapshot exposes nine effect lanes, including `bluetooth`. That lane
-governs scan, connect, disconnect, and preview-command effects in both desktop
+The app snapshot exposes twenty-one effect lanes. `bluetooth` governs scan,
+connect, disconnect, and preview-command effects in both desktop
 implementations; it does not put device identifiers or credentials into sync
-or API payloads.
+or API payloads. The twelve composition lanes — `briefing`, `day_plan`,
+`tasks`, `habits`, `focus`, `sleep`, `biometrics`, `inbox`, `messages`,
+`commute`, `portfolio` and `provider_sync` — each fence one upstream domain, so
+a mail provider that is rate limited leaves its own lane failed without
+stalling the lanes beside it. `tests/schema_parity.rs` compares the lane list
+in `src/lib.rs` against `schemas/app-snapshot.schema.json` directly, because
+nothing else forces the two spellings to agree.
 
 ## Safety rules
 
@@ -106,3 +175,11 @@ npx --yes --package=@informalsystems/quint@0.32.0 quint run \
 Formal verification proves the declared finite abstraction and checked bound,
 not clocks, operating systems, notification providers, networks, or hardware.
 Those failures return as controlled events and remain fenced by generation.
+
+## Background
+
+The competitive inventory, the 169-capability gap analysis, and the 2026
+provider integration surface that the composition domains are drawn from live
+in `happy-wakey/happy-wakey-docs` under `docs/product/parity-2026/`. The
+integration surface is the reason `message-digest` encodes access levels: in
+2026 most direct-message platforms cannot be read by a third party at all.

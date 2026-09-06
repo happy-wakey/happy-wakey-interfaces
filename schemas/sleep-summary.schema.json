@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/sleep-summary.schema.json",
+  "title": "Happy Wakey nightly sleep summary",
+  "description": "One owner's sleep for one civil night, normalized across HealthKit, Health Connect, Oura, WHOOP, Google Health, Garmin and Withings. Every derived figure carries its measurement basis: a modeled estimate and a measured stage breakdown must never be presented as the same claim.",
+  "$defs": {
+    "civil_date": { "type": "string", "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$" },
+    "measurement_basis": {
+      "description": "`wearable` is a device-measured signal, `phone` is accelerometer or usage inference, `modeled` is a prediction with no measurement for that night, `manual` is owner-entered.",
+      "enum": ["wearable", "phone", "modeled", "manual"]
+    },
+    "confidence": { "enum": ["high", "medium", "low", "insufficient_data"] },
+    "stage_minutes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["awake", "light", "deep", "rem", "unspecified"],
+      "properties": {
+        "awake": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "light": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "deep": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "rem": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "unspecified": {
+          "description": "Minutes the source scored as asleep without a stage. Health Connect writers and phone-only sources land here; it must not be silently folded into light sleep.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        }
+      }
+    },
+    "overnight_vitals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resting_heart_rate_bpm",
+        "heart_rate_variability_ms",
+        "respiratory_rate_bpm",
+        "blood_oxygen_percent",
+        "skin_temperature_deviation_c"
+      ],
+      "properties": {
+        "resting_heart_rate_bpm": {
+          "anyOf": [{ "type": "number", "minimum": 20, "maximum": 200 }, { "type": "null" }]
+        },
+        "heart_rate_variability_ms": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 500 }, { "type": "null" }]
+        },
+        "respiratory_rate_bpm": {
+          "anyOf": [{ "type": "number", "minimum": 2, "maximum": 60 }, { "type": "null" }]
+        },
+        "blood_oxygen_percent": {
+          "anyOf": [{ "type": "number", "minimum": 50, "maximum": 100 }, { "type": "null" }]
+        },
+        "skin_temperature_deviation_c": {
+          "anyOf": [{ "type": "number", "minimum": -10, "maximum": 10 }, { "type": "null" }]
+        }
+      }
+    },
+    "sleep_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "night_of",
+        "time_zone",
+        "source_connection_id",
+        "source_provider",
+        "measurement_basis",
+        "confidence",
+        "bedtime_at",
+        "wake_at",
+        "time_in_bed_minutes",
+        "asleep_minutes",
+        "sleep_latency_minutes",
+        "awakenings",
+        "efficiency_percent",
+        "stage_minutes",
+        "overnight_vitals",
+        "sleep_score",
+        "sleep_debt_minutes",
+        "regularity_percent",
+        "recommended_bedtime_local",
+        "generation",
+        "recorded_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "night_of": {
+          "description": "Civil date the night is attributed to, which is the date of the evening the owner went to bed, in `time_zone`.",
+          "$ref": "#/$defs/civil_date"
+        },
+        "time_zone": { "type": "string", "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$", "maxLength": 64 },
+        "source_connection_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "source_provider": { "$ref": "provider-connection.schema.json#/$defs/provider" },
+        "measurement_basis": { "$ref": "#/$defs/measurement_basis" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "bedtime_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "wake_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "time_in_bed_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "asleep_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 },
+        "sleep_latency_minutes": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1440 }, { "type": "null" }]
+        },
+        "awakenings": {
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 200 }, { "type": "null" }]
+        },
+        "efficiency_percent": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "stage_minutes": {
+          "anyOf": [{ "$ref": "#/$defs/stage_minutes" }, { "type": "null" }]
+        },
+        "overnight_vitals": { "$ref": "#/$defs/overnight_vitals" },
+        "sleep_score": {
+          "description": "Provider composite score normalized to 0-100. Null when the provider publishes none; never back-fill it with a local formula presented as the provider's score.",
+          "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "sleep_debt_minutes": {
+          "description": "Rolling cumulative shortfall against the owner's need, positive when sleep is owed.",
+          "anyOf": [{ "type": "integer", "minimum": -10080, "maximum": 10080 }, { "type": "null" }]
+        },
+        "regularity_percent": {
+          "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }]
+        },
+        "recommended_bedtime_local": {
+          "anyOf": [
+            { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+            { "type": "null" }
+          ]
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "recorded_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  },
+  "$ref": "#/$defs/sleep_summary"
+}

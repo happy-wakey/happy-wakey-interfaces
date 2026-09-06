@@ -1,0 +1,53 @@
+{
+  "schema": "happy-wakey/market-watch/v1",
+  "generated_at": "2026-09-05T12:00:00Z",
+  "market_phase": "pre_market",
+  "quotes": [
+    {
+      "symbol": "AAPL",
+      "display_name": "Apple Inc.",
+      "currency": "USD",
+      "last_price": 241.18,
+      "previous_close": 239.02,
+      "change_absolute": 2.16,
+      "change_percent": 0.9,
+      "struck_at": "2026-09-05T11:45:00Z",
+      "feed_class": "delayed",
+      "source_connection_id": "cf71c363-b190-4a8c-f274-8027fa383cdc",
+      "source_provider": "alpaca"
+    }
+  ],
+  "holdings": [
+    {
+      "account_ref": "snaptrade:acct_4f19",
+      "symbol": "AAPL",
+      "quantity": 40,
+      "currency": "USD",
+      "market_value": 9647.2,
+      "cost_basis": 7120.0,
+      "unrealized_change": 2527.2,
+      "as_of": "2026-09-05T04:00:00Z",
+      "source_connection_id": "d082d474-c2a1-4b9d-0385-9138fb494ded"
+    }
+  ],
+  "triggered_alerts": [
+    {
+      "id": "e193e585-d3b2-4cae-1496-a249fc5a5efe",
+      "symbol": "AAPL",
+      "direction": "above",
+      "threshold": 240.0,
+      "triggered_at": "2026-09-05T11:31:00Z",
+      "observed_price": 241.18
+    }
+  ],
+  "calendar": [
+    {
+      "kind": "earnings",
+      "symbol": "AAPL",
+      "headline": "Apple Q4 earnings call",
+      "scheduled_for": "2026-10-29T20:30:00Z",
+      "is_estimated": true
+    }
+  ],
+  "generation": 2
+}

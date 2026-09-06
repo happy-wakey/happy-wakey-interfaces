@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/habit.schema.json",
+  "title": "Happy Wakey habit",
+  "description": "A recurring commitment the owner wants placed and defended, and the per-day record of whether it happened. A habit is a schedulable object rather than a checkbox: `preferred_window` and `duration_minutes` let the planner site it, and `is_flexible` says whether it may be moved when the calendar changes.",
+  "$defs": {
+    "cadence": { "enum": ["daily", "weekly", "monthly", "weekday_set", "times_per_week"] },
+    "entry_state": { "enum": ["pending", "completed", "skipped", "missed"] },
+    "habit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "cadence",
+        "target_per_period",
+        "weekdays",
+        "preferred_window_start_local",
+        "preferred_window_end_local",
+        "duration_minutes",
+        "is_flexible",
+        "enabled",
+        "time_zone",
+        "current_streak",
+        "longest_streak",
+        "tags",
+        "generation",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "cadence": { "$ref": "#/$defs/cadence" },
+        "target_per_period": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "weekdays": {
+          "description": "Empty for cadences that do not pin weekdays; the planner then chooses days inside the period.",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 6 },
+          "uniqueItems": true,
+          "maxItems": 7
+        },
+        "preferred_window_start_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "preferred_window_end_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "duration_minutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+        "is_flexible": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "time_zone": { "type": "string", "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$", "maxLength": 64 },
+        "current_streak": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "longest_streak": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "uniqueItems": true,
+          "maxItems": 20
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "created_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "habit_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "habit_id", "day", "state", "completed_at", "block_id", "generation", "updated_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "habit_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "day": { "$ref": "sleep-summary.schema.json#/$defs/civil_date" },
+        "state": { "$ref": "#/$defs/entry_state" },
+        "completed_at": {
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }]
+        },
+        "block_id": {
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        },
+        "generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "completed" } }, "required": ["state"] },
+          "then": { "properties": { "completed_at": { "type": "string" } } }
+        },
+        {
+          "if": {
+            "properties": { "state": { "enum": ["pending", "skipped", "missed"] } },
+            "required": ["state"]
+          },
+          "then": { "properties": { "completed_at": { "type": "null" } } }
+        }
+      ]
+    },
+    "create_habit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transition_id",
+        "name",
+        "cadence",
+        "target_per_period",
+        "weekdays",
+        "preferred_window_start_local",
+        "preferred_window_end_local",
+        "duration_minutes",
+        "is_flexible",
+        "enabled",
+        "time_zone",
+        "tags"
+      ],
+      "properties": {
+        "transition_id": { "$ref": "common.schema.json#/$defs/transition_id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "cadence": { "$ref": "#/$defs/cadence" },
+        "target_per_period": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "weekdays": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 6 },
+          "uniqueItems": true,
+          "maxItems": 7
+        },
+        "preferred_window_start_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "preferred_window_end_local": { "type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "duration_minutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+        "is_flexible": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "time_zone": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "uniqueItems": true,
+          "maxItems": 20
+        }
+      }
+    },
+    "record_habit_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transition_id", "expected_generation", "day", "state", "client_time"],
+      "properties": {
+        "transition_id": { "$ref": "common.schema.json#/$defs/transition_id" },
+        "expected_generation": { "$ref": "common.schema.json#/$defs/generation" },
+        "day": { "$ref": "sleep-summary.schema.json#/$defs/civil_date" },
+        "state": { "$ref": "#/$defs/entry_state" },
+        "client_time": { "$ref": "common.schema.json#/$defs/timestamp" }
+      }
+    }
+  },
+  "$ref": "#/$defs/habit"
+}

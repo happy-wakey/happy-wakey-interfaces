@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.happy-wakey.dev/briefing-composition.schema.json",
+  "title": "Happy Wakey briefing composition",
+  "description": "The per-source composition trace behind one morning's briefing: what each domain contributed, what state it was in, and where it came from. This is the INPUT layer. The delivered, card-shaped representation a client renders is `morning-briefing.schema.json`, which remains the single delivery authority — there must not be two briefing representations on the wire. Composition exists so that a card can answer 'why am I seeing this' and, just as importantly, so that a source that could not be read is recorded as an explicit gap rather than vanishing. A section in any state other than `ready` carries no items, and every ready section names its provenance; those two rules are what keep a partial briefing legible instead of silently short.",
+  "$defs": {
+    "section_kind": {
+      "enum": [
+        "schedule",
+        "tasks",
+        "habits",
+        "focus_windows",
+        "sleep",
+        "biometrics",
+        "anomalies",
+        "inbox",
+        "messages",
+        "markets",
+        "environment",
+        "commute",
+        "news"
+      ]
+    },
+    "section_state": {
+      "description": "`not_connected` means the owner has connected no provider for this section. `unavailable` means the platform or provider policy forbids it here. `degraded` means partial data was assembled and the section says so. `stale` means the last good data is older than its freshness budget. Only `ready` may carry a full item list.",
+      "enum": [
+        "ready",
+        "empty",
+        "degraded",
+        "stale",
+        "not_connected",
+        "unavailable",
+        "failed"
+      ]
+    },
+    "surface_reason": {
+      "description": "Why this item is in the brief at all. The rationale is part of the payload so the interface can answer 'why am I seeing this' without re-deriving it.",
+      "enum": [
+        "next_up",
+        "starts_soon",
+        "deadline_today",
+        "overdue",
+        "conflict",
+        "vip_sender",
+        "awaiting_your_reply",
+        "outside_baseline",
+        "streak_at_risk",
+        "threshold_crossed",
+        "unusual_delay",
+        "severe_alert",
+        "first_of_day",
+        "owner_pinned"
+      ]
+    },
+    "provenance": {
+      "description": "Where one section's content came from and how fresh it is. A section built from more than one provider carries one entry per provider.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_connection_id",
+        "provider",
+        "content_class",
+        "feed_class",
+        "fetched_at",
+        "staleness_seconds"
+      ],
+      "properties": {
+        "source_connection_id": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider": {
+          "$ref": "provider-connection.schema.json#/$defs/provider"
+        },
+        "content_class": {
+          "$ref": "provider-connection.schema.json#/$defs/content_class"
+        },
+        "feed_class": {
+          "$ref": "provider-connection.schema.json#/$defs/feed_class"
+        },
+        "fetched_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "staleness_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31536000
+        }
+      }
+    },
+    "briefing_composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "schema",
+        "for_day",
+        "time_zone",
+        "generated_at",
+        "delivered_at",
+        "headline",
+        "sections",
+        "sections_withheld",
+        "generation"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/uuid"
+        },
+        "schema": {
+          "const": "happy-wakey/briefing-composition/v1"
+        },
+        "for_day": {
+          "$ref": "sleep-summary.schema.json#/$defs/civil_date"
+        },
+        "time_zone": {
+          "type": "string",
+          "pattern": "^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$",
+          "maxLength": 64
+        },
+        "generated_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "delivered_at": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "headline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/composition_section"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "sections_withheld": {
+          "description": "Sections the owner has switched off. Listed rather than omitted so the brief can distinguish 'you turned this off' from 'this broke'.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section_kind"
+          },
+          "uniqueItems": true,
+          "maxItems": 20
+        },
+        "generation": {
+          "$ref": "common.schema.json#/$defs/generation"
+        }
+      }
+    },
+    "composition_section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "rank",
+        "state",
+        "summary",
+        "items",
+        "provenance",
+        "state_detail"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/section_kind"
+        },
+        "rank": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "state": {
+          "$ref": "#/$defs/section_state"
+        },
+        "summary": {
+          "description": "One sentence in the owner's language. Present for every state, including the states that carry no items, so a gap is still legible.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/composition_item"
+          },
+          "maxItems": 20
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          },
+          "maxItems": 10
+        },
+        "state_detail": {
+          "description": "Why the section is not ready. Required whenever state is not `ready`.",
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "empty",
+                  "not_connected",
+                  "unavailable",
+                  "failed"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "items": {
+                "maxItems": 0
+              },
+              "state_detail": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "degraded",
+                  "stale"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "state_detail": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "ready"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "provenance": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "composition_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rank",
+        "headline",
+        "detail",
+        "occurs_at",
+        "reasons",
+        "entity_ref",
+        "deep_link"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/uuid"
+        },
+        "rank": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "headline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "occurs_at": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/surface_reason"
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 6
+        },
+        "entity_ref": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deep_link": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "$ref": "#/$defs/briefing_composition"
+}

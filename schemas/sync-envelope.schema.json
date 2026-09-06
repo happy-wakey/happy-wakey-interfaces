@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.happy-wakey.dev/sync-envelope.schema.json",
   "title": "Happy Wakey sync envelope",
+  "description": "The two-way change log between a device and Happy Wakey Sync. Sleep and biometric summaries are deliberately absent from `collection`: physiological records are read per device from the platform health store under their own consent and are not replicated through this general-purpose log. Adding them would need its own review, not a new enum value.",
   "$defs": {
     "change": {
       "type": "object",
@@ -10,7 +11,25 @@
       "properties": {
         "change_id": { "$ref": "common.schema.json#/$defs/uuid" },
         "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
-        "collection": { "enum": ["alarms", "alarm_occurrences", "routines", "tasks", "preferences"] },
+        "collection": {
+          "enum": [
+            "alarms",
+            "alarm_occurrences",
+            "routines",
+            "tasks",
+            "preferences",
+            "habits",
+            "habit_entries",
+            "day_plans",
+            "plan_blocks",
+            "focus_sessions",
+            "provider_connections",
+            "module_layouts",
+            "watchlist_symbols",
+            "price_alerts",
+            "vip_senders"
+          ]
+        },
         "entity_id": { "$ref": "common.schema.json#/$defs/uuid" },
         "operation": { "enum": ["upsert", "delete"] },
         "generation": { "$ref": "common.schema.json#/$defs/generation" },
@@ -34,4 +53,3 @@
     "has_more": { "type": "boolean" }
   }
 }
-

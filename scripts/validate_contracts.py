@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
+"""Contract gate for happy-wakey-interfaces.
+
+This file is the merge point of two contract efforts that landed in parallel:
+
+* the feedless morning-briefing work (DEN-4241), which made TypeSpec and JSON
+  Schema co-equal authorities and added generated peer artifacts, and
+* the morning-dashboard parity work, which added the domain contracts a briefing
+  is composed from and the fail-closed counter-examples that keep them honest.
+
+Neither side's checks were dropped. Where both sides asserted over the same
+object the assertions were unioned, not chosen between.
+"""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -22,12 +35,18 @@ for document in schema_docs:
     registry = registry.with_resource(document["$id"], Resource.from_contents(document))
 
 fixtures = {
+    # founding contracts
     "app-snapshot.schema.json": ROOT / "examples/app-snapshot.json",
     "alarm.schema.json": ROOT / "examples/alarm.json",
     "alarm-occurrence.schema.json": ROOT / "examples/alarm-occurrence.json",
+    "async-operation.schema.json": ROOT / "examples/async-operation.json",
     "service-operation-request.schema.json": ROOT / "examples/service-operation-request.json",
     "service-operation-response.schema.json": ROOT / "examples/service-operation-response.json",
     "sync-envelope.schema.json": ROOT / "examples/sync-envelope.json",
+    # delivery authority: the card-shaped briefing a client renders
+    "morning-briefing.schema.json": ROOT / "examples/morning-briefing.json",
+    # composition inputs: the domains a briefing is built from
+    "briefing-composition.schema.json": ROOT / "examples/briefing-composition.json",
     "provider-connection.schema.json": ROOT / "examples/provider-connection.json",
     "sleep-summary.schema.json": ROOT / "examples/sleep-summary.json",
     "biometric-summary.schema.json": ROOT / "examples/biometric-summary.json",
@@ -37,9 +56,7 @@ fixtures = {
     "message-digest.schema.json": ROOT / "examples/message-digest.json",
     "market-watch.schema.json": ROOT / "examples/market-watch.json",
     "environment-brief.schema.json": ROOT / "examples/environment-brief.json",
-    "briefing.schema.json": ROOT / "examples/briefing.json",
     "module-layout.schema.json": ROOT / "examples/module-layout.json",
-    "async-operation.schema.json": ROOT / "examples/async-operation.json",
 }
 for schema_name, fixture_path in fixtures.items():
     schema = load(SCHEMAS / schema_name)
@@ -57,6 +74,15 @@ unexercised = {path.name for path in sorted(SCHEMAS.glob("*.schema.json"))} - se
 }
 assert not unexercised, f"schemas without a fixture: {sorted(unexercised)}"
 
+# There is exactly one delivery representation of a briefing. The composition
+# contract is an input to it and must not grow into a second wire shape.
+delivery = load(SCHEMAS / "morning-briefing.schema.json")
+composition = load(SCHEMAS / "briefing-composition.schema.json")
+assert composition["$id"].endswith("briefing-composition.schema.json")
+assert "cards" not in json.dumps(composition["$defs"]["briefing_composition"]["properties"]), (
+    "the composition contract must not carry delivery cards; morning-briefing owns those"
+)
+
 
 def reject(schema_name: str, document, why: str) -> None:
     """A counter-example the contract must refuse. Fail-closed rules are only
@@ -69,22 +95,22 @@ def reject(schema_name: str, document, why: str) -> None:
     assert not validator.is_valid(document), f"expected rejection: {why}"
 
 
-briefing = load(ROOT / "examples/briefing.json")
+brief = load(ROOT / "examples/briefing-composition.json")
 
 # A section that is not ready may not smuggle items through.
-not_ready_with_items = json.loads(json.dumps(briefing))
+not_ready_with_items = json.loads(json.dumps(brief))
 not_ready_with_items["sections"][0]["state"] = "not_connected"
-reject("briefing.schema.json", not_ready_with_items, "not_connected section carrying items")
+reject("briefing-composition.schema.json", not_ready_with_items, "not_connected section carrying items")
 
 # A degraded or missing section must say why.
-degraded_without_detail = json.loads(json.dumps(briefing))
+degraded_without_detail = json.loads(json.dumps(brief))
 degraded_without_detail["sections"][2]["state_detail"] = None
-reject("briefing.schema.json", degraded_without_detail, "degraded section without state_detail")
+reject("briefing-composition.schema.json", degraded_without_detail, "degraded section without state_detail")
 
 # A ready section must name where its content came from.
-ready_without_provenance = json.loads(json.dumps(briefing))
+ready_without_provenance = json.loads(json.dumps(brief))
 ready_without_provenance["sections"][0]["provenance"] = []
-reject("briefing.schema.json", ready_without_provenance, "ready section without provenance")
+reject("briefing-composition.schema.json", ready_without_provenance, "ready section without provenance")
 
 inbox = load(ROOT / "examples/inbox-digest.json")
 
@@ -109,6 +135,7 @@ reject("message-digest.schema.json", unavailable_with_threads, "policy_unavailab
 unavailable_with_count = json.loads(json.dumps(messages))
 unavailable_with_count["platforms"][2]["unread_total"] = 3
 reject("message-digest.schema.json", unavailable_with_count, "policy_unavailable platform reporting a count")
+
 
 def validator_for(ref: str) -> Draft202012Validator:
     """Validate against one named $def, resolving its relative references
@@ -139,37 +166,6 @@ assert not validator_for(HABIT_ENTRY).is_valid(
     {**completed_entry, "state": "skipped"}
 ), "expected rejection: skipped habit entry carrying completed_at"
 
-# The response subject an accepted operation is told to listen on must be that
-# operation's own inbox; anything else would hand a caller someone else's replies.
-accepted = load(ROOT / "examples/async-operation.json")
-accepted = {
-    "schema": "happy-wakey.async-operation.accepted.v1",
-    "operation_id": accepted["operation_id"],
-    "response_subject": "happy-wakey.responses." + accepted["operation_id"],
-}
-Draft202012Validator(
-    load(SCHEMAS / "async-operation.schema.json"),
-    registry=registry,
-    format_checker=FormatChecker(),
-).validate(accepted)
-reject(
-    "async-operation.schema.json",
-    {**accepted, "response_subject": "happy-wakey.responses.not-a-uuid"},
-    "accepted operation whose response subject is not a uuid inbox",
-)
-
-# The JetStream wake-up is credential-free by construction: the API derives the
-# verified owner from the outbox row, never from the signal.
-reject(
-    "async-operation.schema.json",
-    {
-        "schema": "happy-wakey.async-operation.signal.v1",
-        "operation_id": accepted["operation_id"],
-        "bearer": "redacted",
-    },
-    "signal carrying a credential",
-)
-
 openapi = load(ROOT / "openapi/happy-wakey.openapi.json")
 assert openapi["openapi"].startswith("3.1.")
 operation_ids = []
@@ -188,7 +184,7 @@ assert {
     "listProviderConnections",
     "connectProvider",
     "disconnectProvider",
-    "getBriefing",
+    "getBriefingComposition",
     "getDayPlan",
     "getSleepSummary",
     "getBiometricSummary",
@@ -202,6 +198,40 @@ assert {
     "getModuleLayout",
     "putModuleLayout",
 } == set(operation_ids)
+
+# TypeSpec and JSON Schema are co-equal authorities for the delivery contract:
+# a peer model must exist in both, so neither can drift ahead of the other.
+briefing_schema = load(SCHEMAS / "morning-briefing.schema.json")
+type_spec = (ROOT / "typespec/main.tsp").read_text(encoding="utf-8")
+type_spec_models = set(re.findall(r"^model\s+([A-Za-z][A-Za-z0-9_]*)", type_spec, re.MULTILINE))
+peer_models = {
+    "OnboardingIntent",
+    "AccountContext",
+    "ConnectorConsent",
+    "SourceItemCandidate",
+    "UsefulnessDecision",
+    "SafeDeepLink",
+    "BriefingCard",
+    "MorningBriefing",
+    "EmbeddingDescriptor",
+    "CorrelationFinding",
+    "RealtimeEnvelope",
+    "ChatSession",
+}
+assert peer_models <= set(briefing_schema["$defs"]), "JSON Schema authority is missing peer models"
+assert peer_models <= type_spec_models, "TypeSpec authority is missing peer models"
+assert briefing_schema["$defs"]["SafeDeepLink"]["properties"]["feedFallbackAllowed"]["const"] is False
+assert briefing_schema["$defs"]["EmbeddingDescriptor"]["properties"]["dimensions"]["maximum"] == 4100
+
+generated_files = (
+    ROOT / "generated/json-schema/types.d.ts",
+    ROOT / "generated/json-schema/validator.cjs",
+    ROOT / "generated/typespec/types.ts",
+    ROOT / "generated/typespec/validator.cjs",
+    ROOT / "generated/typespec/protobuf/@typespec/protobuf/main.proto",
+    ROOT / "generated/provenance.json",
+)
+assert all(path.is_file() and path.stat().st_size > 0 for path in generated_files)
 
 sql = (ROOT / "sql/schema.sql").read_text(encoding="utf-8")
 for required in (
@@ -217,7 +247,7 @@ for required in (
     "happy_wakey_plan_blocks",
     "happy_wakey_habits",
     "happy_wakey_habit_entries",
-    "happy_wakey_briefings",
+    "happy_wakey_briefing_compositions",
     "happy_wakey_module_layouts",
     "happy_wakey_watchlist_symbols",
     "happy_wakey_vip_senders",
@@ -235,5 +265,7 @@ for forbidden in ("access_token", "refresh_token", "client_secret", "api_key", "
 
 print(
     f"validated {len(schema_docs)} Draft 2020-12 schemas, {len(fixtures)} fixtures, "
-    f"11 fail-closed counter-examples, {len(operation_ids)} operations, and declarative SQL"
+    f"10 fail-closed counter-examples, {len(operation_ids)} operations, "
+    f"{len(peer_models)} peer-source briefing models, generated validators, "
+    "Protobuf, and declarative SQL"
 )

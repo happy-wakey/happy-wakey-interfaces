@@ -28,6 +28,10 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.22.1"
+          cache: npm
       - name: Verify Zed package contract
         shell: bash
         run: |
@@ -39,6 +43,8 @@ jobs:
           tar -xzf /tmp/zed.tar.gz -C /tmp
           /tmp/zed validate --require-lock
       - run: python -m pip install --disable-pip-version-check 'jsonschema[format]>=4.23,<5'
+      - run: npm ci --ignore-scripts
+      - run: npm run check
       - run: python scripts/validate_contracts.py
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets --locked -- -D warnings

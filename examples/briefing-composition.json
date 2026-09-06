@@ -1,6 +1,6 @@
 {
   "id": "14c61818-0605-4df1-4729-d57c2f8d8c21",
-  "schema": "happy-wakey/briefing/v1",
+  "schema": "happy-wakey/briefing-composition/v1",
   "for_day": "2026-09-05",
   "time_zone": "America/Chicago",
   "generated_at": "2026-09-05T11:45:00Z",
@@ -19,7 +19,9 @@
           "headline": "Sleep debt is up to 1h 36m",
           "detail": "Three shorter nights in a row. An earlier wind-down tonight pays most of it back.",
           "occurs_at": null,
-          "reasons": ["outside_baseline"],
+          "reasons": [
+            "outside_baseline"
+          ],
           "entity_ref": "9d2c7a41-0f52-4f8b-a0d3-6b21c9e4f002",
           "deep_link": null
         }
@@ -48,7 +50,10 @@
           "headline": "Design review at 10:00",
           "detail": "Leave by 09:33 to arrive on time.",
           "occurs_at": "2026-09-05T15:00:00Z",
-          "reasons": ["next_up", "unusual_delay"],
+          "reasons": [
+            "next_up",
+            "unusual_delay"
+          ],
           "entity_ref": "3b1c6099-5d82-4f3a-a162-708d4e2f3006",
           "deep_link": "https://example.zoom.us/j/000000"
         }
@@ -77,7 +82,11 @@
           "headline": "Dana Whitfield is waiting on a signature",
           "detail": "Mentions Friday. You started the thread and have not replied.",
           "occurs_at": "2026-09-05T06:14:00Z",
-          "reasons": ["vip_sender", "awaiting_your_reply", "deadline_today"],
+          "reasons": [
+            "vip_sender",
+            "awaiting_your_reply",
+            "deadline_today"
+          ],
           "entity_ref": null,
           "deep_link": null
         }
@@ -113,6 +122,8 @@
       "state_detail": "Connect a market data provider to see quotes before the open."
     }
   ],
-  "sections_withheld": ["news"],
+  "sections_withheld": [
+    "news"
+  ],
   "generation": 2
 }

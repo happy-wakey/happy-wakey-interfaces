@@ -287,37 +287,6 @@
         }
       }
     },
-    "/v1/briefings/{day}": {
-      "get": {
-        "operationId": "getBriefing",
-        "description": "The composed brief for one civil day. Sections that could not be built are returned in a non-ready state with a reason; they are never omitted.",
-        "parameters": [
-          {
-            "name": "day",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "../schemas/sleep-summary.schema.json#/$defs/civil_date"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Composed briefing",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "../schemas/briefing.schema.json#/$defs/briefing"
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
     "/v1/day-plans/{day}": {
       "get": {
         "operationId": "getDayPlan",
@@ -648,6 +617,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "../schemas/module-layout.schema.json#/$defs/module_layout"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/briefing-composition/{day}": {
+      "get": {
+        "operationId": "getBriefingComposition",
+        "description": "The composition trace for one civil day: what each domain contributed and in what state. Sections that could not be built are returned in a non-ready state with a reason; they are never omitted. The card-shaped briefing a client renders is served by the HUD API described in typespec/main.tsp and is generated from this.",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "../schemas/sleep-summary.schema.json#/$defs/civil_date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Briefing composition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../schemas/briefing-composition.schema.json#/$defs/briefing_composition"
                 }
               }
             }

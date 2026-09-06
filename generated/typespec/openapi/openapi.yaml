@@ -1,0 +1,658 @@
+openapi: 3.1.0
+info:
+  title: Happy Wakey Morning Briefing API
+  version: 0.0.0
+tags: []
+paths:
+  /v1/briefings/morning:
+    get:
+      operationId: getMorningBriefing
+      parameters:
+        - name: authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MorningBriefing'
+  /v1/briefings/{briefingId}/stream:
+    get:
+      operationId: getBriefingStream
+      parameters:
+        - name: briefingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealtimeEnvelope'
+components:
+  schemas:
+    AccountContext:
+      type: object
+      required:
+        - subjectId
+        - accountKind
+        - tenantId
+        - policyVersion
+      properties:
+        subjectId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        accountKind:
+          type: string
+          enum:
+            - individual
+            - organization_member
+        tenantId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        organizationId:
+          type: string
+        policyVersion:
+          type: string
+          minLength: 1
+          maxLength: 128
+    BriefingCard:
+      type: object
+      required:
+        - cardId
+        - kind
+        - priority
+        - title
+        - summary
+        - sourceLabel
+        - observedAt
+      properties:
+        cardId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        kind:
+          type: string
+          enum:
+            - this_day_in_history
+            - useful_message
+            - email_bottleneck
+            - team_bottleneck
+            - calendar
+            - weather
+            - extended_outlook
+            - flight
+            - market
+            - kpi
+            - task
+            - news
+            - audio_briefing
+        priority:
+          type: string
+          enum:
+            - critical
+            - high
+            - normal
+            - low
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 1200
+        sourceLabel:
+          type: string
+        observedAt:
+          type: string
+          format: date-time
+        actionBy:
+          type: string
+          format: date-time
+        deepLink:
+          $ref: '#/components/schemas/SafeDeepLink'
+        usefulness:
+          $ref: '#/components/schemas/UsefulnessDecision'
+        uncertaintyNotice:
+          type: string
+    ChatSession:
+      type: object
+      required:
+        - sessionId
+        - tenantId
+        - audience
+        - sharedAuthSubject
+        - allowedSearchScopes
+        - openedAt
+        - expiresAt
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tenantId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        audience:
+          type: string
+          enum:
+            - sales_visitor
+            - customer_support
+            - organization_admin
+            - internal_operator
+            - owner
+        sharedAuthSubject:
+          type: string
+          minLength: 1
+          maxLength: 128
+        allowedSearchScopes:
+          type: array
+          items:
+            type: string
+          maxItems: 32
+        openedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    ConnectorConsent:
+      type: object
+      required:
+        - consentId
+        - connector
+        - state
+        - scopes
+        - sourceAccountRef
+      properties:
+        consentId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        connector:
+          type: string
+          enum:
+            - email
+            - whatsapp
+            - linkedin
+            - x_dm
+            - slack
+            - teams
+            - calendar
+            - weather
+            - flights
+            - markets
+            - crm
+        state:
+          type: string
+          enum:
+            - pending
+            - granted
+            - revoked
+            - expired
+        scopes:
+          type: array
+          items:
+            type: string
+          maxItems: 32
+        grantedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        sourceAccountRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+    CorrelationFinding:
+      type: object
+      required:
+        - findingId
+        - tenantId
+        - feature
+        - outcome
+        - coefficient
+        - pValue
+        - confidenceLow
+        - confidenceHigh
+        - sampleSize
+        - correction
+        - causalClaimAllowed
+        - computedAt
+      properties:
+        findingId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tenantId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        feature:
+          type: string
+        outcome:
+          type: string
+        coefficient:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        pValue:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        confidenceLow:
+          type: number
+          format: double
+        confidenceHigh:
+          type: number
+          format: double
+        sampleSize:
+          type: integer
+          format: uint32
+          minimum: 3
+        correction:
+          type: string
+          enum:
+            - none
+            - bonferroni
+            - benjamini_hochberg
+        causalClaimAllowed:
+          type: boolean
+          enum:
+            - false
+        computedAt:
+          type: string
+          format: date-time
+    EmbeddingDescriptor:
+      type: object
+      required:
+        - vectorRef
+        - tenantId
+        - sourceItemRef
+        - modelRef
+        - dimensions
+        - contentSha256
+        - retentionClass
+        - createdAt
+      properties:
+        vectorRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tenantId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        sourceItemRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        modelRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        dimensions:
+          type: integer
+          format: uint32
+          minimum: 1
+          maximum: 4100
+        contentSha256:
+          type: string
+        retentionClass:
+          type: string
+          enum:
+            - ephemeral
+            - standard
+            - legal_hold
+        createdAt:
+          type: string
+          format: date-time
+    MorningBriefing:
+      type: object
+      required:
+        - schema
+        - briefingId
+        - account
+        - localDate
+        - timeZone
+        - generatedAt
+        - validUntil
+        - cards
+        - suppressedItemCount
+      properties:
+        schema:
+          type: string
+          enum:
+            - happy-wakey.morning-briefing.v1
+        briefingId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        account:
+          $ref: '#/components/schemas/AccountContext'
+        localDate:
+          type: string
+          format: date
+        timeZone:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/BriefingCard'
+          maxItems: 64
+        audioUrl:
+          type: string
+          format: uri
+        audioDurationSeconds:
+          type: integer
+          format: uint32
+          minimum: 0
+          maximum: 3600
+        suppressedItemCount:
+          type: integer
+          format: uint32
+    OnboardingIntent:
+      type: object
+      required:
+        - requestId
+        - accountKind
+        - timeZone
+        - morningWindowStart
+        - selectedConnectors
+        - consentVersion
+      properties:
+        requestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        accountKind:
+          type: string
+          enum:
+            - individual
+            - organization_member
+        organizationName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        requestedSeatCount:
+          type: integer
+          format: uint32
+          minimum: 1
+          maximum: 100000
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 128
+        morningWindowStart:
+          type: string
+          format: time
+        selectedConnectors:
+          type: array
+          items:
+            type: string
+            enum:
+              - email
+              - whatsapp
+              - linkedin
+              - x_dm
+              - slack
+              - teams
+              - calendar
+              - weather
+              - flights
+              - markets
+              - crm
+          maxItems: 16
+        consentVersion:
+          type: string
+          minLength: 1
+          maxLength: 128
+    RealtimeEnvelope:
+      type: object
+      required:
+        - schema
+        - eventId
+        - tenantId
+        - subjectId
+        - sequence
+        - transport
+        - resumeToken
+        - eventType
+        - payloadJson
+        - emittedAt
+        - ackRequired
+      properties:
+        schema:
+          type: string
+          enum:
+            - happy-wakey.realtime.v1
+        eventId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tenantId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        subjectId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        sequence:
+          type: integer
+          format: uint64
+        transport:
+          type: string
+          enum:
+            - websocket
+            - tls_tcp
+            - nats
+        resumeToken:
+          type: string
+          minLength: 1
+          maxLength: 256
+        eventType:
+          type: string
+        payloadJson:
+          type: string
+        emittedAt:
+          type: string
+          format: date-time
+        ackRequired:
+          type: boolean
+    SafeDeepLink:
+      type: object
+      required:
+        - linkId
+        - connector
+        - targetUrl
+        - decisionId
+        - sourceItemRef
+        - expiresAt
+        - requiresReauthentication
+        - feedFallbackAllowed
+      properties:
+        linkId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        connector:
+          type: string
+          enum:
+            - email
+            - whatsapp
+            - linkedin
+            - x_dm
+            - slack
+            - teams
+            - calendar
+            - weather
+            - flights
+            - markets
+            - crm
+        targetUrl:
+          type: string
+          format: uri
+        decisionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        sourceItemRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        expiresAt:
+          type: string
+          format: date-time
+        requiresReauthentication:
+          type: boolean
+        feedFallbackAllowed:
+          type: boolean
+          enum:
+            - false
+    SourceItemCandidate:
+      type: object
+      required:
+        - sourceItemRef
+        - connector
+        - senderClass
+        - receivedAt
+        - threadRef
+        - encryptedContentRef
+        - contentSha256
+        - hasDirectReplyRequest
+      properties:
+        sourceItemRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        connector:
+          type: string
+          enum:
+            - email
+            - whatsapp
+            - linkedin
+            - x_dm
+            - slack
+            - teams
+            - calendar
+            - weather
+            - flights
+            - markets
+            - crm
+        senderClass:
+          type: string
+          enum:
+            - vip
+            - known
+            - unknown
+        receivedAt:
+          type: string
+          format: date-time
+        threadRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        encryptedContentRef:
+          type: string
+          minLength: 1
+          maxLength: 256
+        contentSha256:
+          type: string
+        hasDirectReplyRequest:
+          type: boolean
+        dueAt:
+          type: string
+          format: date-time
+    UsefulnessDecision:
+      type: object
+      required:
+        - decisionId
+        - sourceItemRef
+        - disposition
+        - score
+        - reasons
+        - modelRef
+        - policyVersion
+        - evaluatedAt
+        - contentSha256
+      properties:
+        decisionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        sourceItemRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        disposition:
+          type: string
+          enum:
+            - useful
+            - not_useful
+            - needs_review
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        reasons:
+          type: array
+          items:
+            type: string
+            enum:
+              - vip_sender
+              - reply_requested
+              - blocking_others
+              - time_sensitive
+              - travel_disruption
+              - security_risk
+              - financial_impact
+              - customer_escalation
+              - low_signal
+              - promotional
+              - unknown
+          minItems: 1
+          maxItems: 8
+        modelRef:
+          type: string
+          minLength: 1
+          maxLength: 128
+        policyVersion:
+          type: string
+          minLength: 1
+          maxLength: 128
+        evaluatedAt:
+          type: string
+          format: date-time
+        contentSha256:
+          type: string
+servers:
+  - url: https://api.hawky.pro
+    description: Production
+    variables: {}

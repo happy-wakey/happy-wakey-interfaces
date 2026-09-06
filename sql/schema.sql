@@ -315,7 +315,7 @@ CREATE TABLE IF NOT EXISTS happy_wakey_habit_entries (
 CREATE INDEX IF NOT EXISTS happy_wakey_habit_entries_owner_day
   ON happy_wakey_habit_entries (owner_id, day DESC);
 
-CREATE TABLE IF NOT EXISTS happy_wakey_briefings (
+CREATE TABLE IF NOT EXISTS happy_wakey_briefing_compositions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id TEXT NOT NULL,
   for_day DATE NOT NULL,
@@ -326,12 +326,12 @@ CREATE TABLE IF NOT EXISTS happy_wakey_briefings (
   generated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
   delivered_at TIMESTAMPTZ NULL,
   generation INT8 NOT NULL DEFAULT 0,
-  CONSTRAINT happy_wakey_briefing_generation CHECK (generation >= 0),
+  CONSTRAINT happy_wakey_briefing_composition_generation CHECK (generation >= 0),
   UNIQUE (owner_id, for_day)
 );
 
-CREATE INDEX IF NOT EXISTS happy_wakey_briefings_owner_day
-  ON happy_wakey_briefings (owner_id, for_day DESC);
+CREATE INDEX IF NOT EXISTS happy_wakey_briefing_compositions_owner_day
+  ON happy_wakey_briefing_compositions (owner_id, for_day DESC);
 
 CREATE TABLE IF NOT EXISTS happy_wakey_module_layouts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

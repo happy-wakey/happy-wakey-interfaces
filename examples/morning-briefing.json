@@ -1,0 +1,70 @@
+{
+  "schema": "happy-wakey.morning-briefing.v1",
+  "briefingId": "brief_2026-09-05_subject-01",
+  "account": {
+    "subjectId": "subject-01",
+    "accountKind": "organization_member",
+    "tenantId": "tenant-happy-wakey",
+    "organizationId": "org-happy-wakey",
+    "policyVersion": "usefulness-2026-09-05"
+  },
+  "localDate": "2026-09-05",
+  "timeZone": "America/Chicago",
+  "generatedAt": "2026-09-05T11:00:00Z",
+  "validUntil": "2026-09-05T15:00:00Z",
+  "cards": [
+    {
+      "cardId": "card-history-01",
+      "kind": "this_day_in_history",
+      "priority": "low",
+      "title": "This day in history",
+      "summary": "A short, cited historical note belongs here; the source adapter supplies the dated fact.",
+      "sourceLabel": "curated history source",
+      "observedAt": "2026-09-05T10:45:00Z"
+    },
+    {
+      "cardId": "card-message-01",
+      "kind": "useful_message",
+      "priority": "high",
+      "title": "A customer is waiting on your approval",
+      "summary": "The request is time-sensitive and blocks a delivery. Raw private message text is not embedded in this fixture.",
+      "sourceLabel": "LinkedIn message",
+      "observedAt": "2026-09-05T10:30:00Z",
+      "actionBy": "2026-09-05T14:00:00Z",
+      "deepLink": {
+        "linkId": "link-message-01",
+        "connector": "linkedin",
+        "targetUrl": "https://www.linkedin.com/messaging/thread/example",
+        "decisionId": "decision-message-01",
+        "sourceItemRef": "source-message-01",
+        "expiresAt": "2026-09-05T15:00:00Z",
+        "requiresReauthentication": true,
+        "feedFallbackAllowed": false
+      },
+      "usefulness": {
+        "decisionId": "decision-message-01",
+        "sourceItemRef": "source-message-01",
+        "disposition": "useful",
+        "score": 0.94,
+        "reasons": ["customer_escalation", "blocking_others", "time_sensitive"],
+        "modelRef": "classifier-deployment-01",
+        "policyVersion": "usefulness-2026-09-05",
+        "evaluatedAt": "2026-09-05T10:40:00Z",
+        "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "cardId": "card-outlook-01",
+      "kind": "extended_outlook",
+      "priority": "normal",
+      "title": "Chicago extended outlook",
+      "summary": "An unsettled pattern may develop late in the outlook window.",
+      "sourceLabel": "extended weather model",
+      "observedAt": "2026-09-05T10:15:00Z",
+      "uncertaintyNotice": "Days 15–21 are an ensemble outlook, not a deterministic forecast; confidence decreases with range."
+    }
+  ],
+  "audioUrl": "https://app.hawky.pro/briefings/brief_2026-09-05_subject-01/audio",
+  "audioDurationSeconds": 184,
+  "suppressedItemCount": 43
+}

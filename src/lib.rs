@@ -302,6 +302,299 @@ pub struct ServiceOperationResponse {
     pub error: Option<ApiError>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AccountKind {
+    Individual,
+    OrganizationMember,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectorKind {
+    Email,
+    Whatsapp,
+    Linkedin,
+    XDm,
+    Slack,
+    Teams,
+    Calendar,
+    Weather,
+    Flights,
+    Markets,
+    Crm,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ConsentState {
+    Pending,
+    Granted,
+    Revoked,
+    Expired,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SenderClass {
+    Vip,
+    Known,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum UsefulnessDisposition {
+    Useful,
+    NotUseful,
+    NeedsReview,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum UsefulnessReason {
+    VipSender,
+    ReplyRequested,
+    BlockingOthers,
+    TimeSensitive,
+    TravelDisruption,
+    SecurityRisk,
+    FinancialImpact,
+    CustomerEscalation,
+    LowSignal,
+    Promotional,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum BriefingCardKind {
+    ThisDayInHistory,
+    UsefulMessage,
+    EmailBottleneck,
+    TeamBottleneck,
+    Calendar,
+    Weather,
+    ExtendedOutlook,
+    Flight,
+    Market,
+    Kpi,
+    Task,
+    News,
+    AudioBriefing,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum BriefingCardPriority {
+    Critical,
+    High,
+    Normal,
+    Low,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RetentionClass {
+    Ephemeral,
+    Standard,
+    LegalHold,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MultipleTestingCorrection {
+    None,
+    Bonferroni,
+    BenjaminiHochberg,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RealtimeTransport {
+    Websocket,
+    TlsTcp,
+    Nats,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ChatAudience {
+    SalesVisitor,
+    CustomerSupport,
+    OrganizationAdmin,
+    InternalOperator,
+    Owner,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OnboardingIntent {
+    pub request_id: String,
+    pub account_kind: AccountKind,
+    pub organization_name: Option<String>,
+    pub requested_seat_count: Option<u32>,
+    pub time_zone: String,
+    pub morning_window_start: String,
+    pub selected_connectors: Vec<ConnectorKind>,
+    pub consent_version: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AccountContext {
+    pub subject_id: String,
+    pub account_kind: AccountKind,
+    pub tenant_id: String,
+    pub organization_id: Option<String>,
+    pub policy_version: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ConnectorConsent {
+    pub consent_id: String,
+    pub connector: ConnectorKind,
+    pub state: ConsentState,
+    pub scopes: Vec<String>,
+    pub granted_at: Option<String>,
+    pub expires_at: Option<String>,
+    pub source_account_ref: String,
+}
+
+/// Opaque input to usefulness classification. Private message text remains in
+/// the encrypted connector vault addressed by `encrypted_content_ref`.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SourceItemCandidate {
+    pub source_item_ref: String,
+    pub connector: ConnectorKind,
+    pub sender_class: SenderClass,
+    pub received_at: String,
+    pub thread_ref: String,
+    pub encrypted_content_ref: String,
+    pub content_sha256: String,
+    pub has_direct_reply_request: bool,
+    pub due_at: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct UsefulnessDecision {
+    pub decision_id: String,
+    pub source_item_ref: String,
+    pub disposition: UsefulnessDisposition,
+    pub score: f32,
+    pub reasons: Vec<UsefulnessReason>,
+    pub model_ref: String,
+    pub policy_version: String,
+    pub evaluated_at: String,
+    pub content_sha256: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SafeDeepLink {
+    pub link_id: String,
+    pub connector: ConnectorKind,
+    pub target_url: String,
+    pub decision_id: String,
+    pub source_item_ref: String,
+    pub expires_at: String,
+    pub requires_reauthentication: bool,
+    pub feed_fallback_allowed: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BriefingCard {
+    pub card_id: String,
+    pub kind: BriefingCardKind,
+    pub priority: BriefingCardPriority,
+    pub title: String,
+    pub summary: String,
+    pub source_label: String,
+    pub observed_at: String,
+    pub action_by: Option<String>,
+    pub deep_link: Option<SafeDeepLink>,
+    pub usefulness: Option<UsefulnessDecision>,
+    pub uncertainty_notice: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MorningBriefing {
+    pub schema: String,
+    pub briefing_id: String,
+    pub account: AccountContext,
+    pub local_date: String,
+    pub time_zone: String,
+    pub generated_at: String,
+    pub valid_until: String,
+    pub cards: Vec<BriefingCard>,
+    pub audio_url: Option<String>,
+    pub audio_duration_seconds: Option<u32>,
+    pub suppressed_item_count: u32,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EmbeddingDescriptor {
+    pub vector_ref: String,
+    pub tenant_id: String,
+    pub source_item_ref: String,
+    pub model_ref: String,
+    pub dimensions: u32,
+    pub content_sha256: String,
+    pub retention_class: RetentionClass,
+    pub created_at: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CorrelationFinding {
+    pub finding_id: String,
+    pub tenant_id: String,
+    pub feature: String,
+    pub outcome: String,
+    pub coefficient: f64,
+    pub p_value: f64,
+    pub confidence_low: f64,
+    pub confidence_high: f64,
+    pub sample_size: u32,
+    pub correction: MultipleTestingCorrection,
+    pub causal_claim_allowed: bool,
+    pub computed_at: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RealtimeEnvelope {
+    pub schema: String,
+    pub event_id: String,
+    pub tenant_id: String,
+    pub subject_id: String,
+    pub sequence: u64,
+    pub transport: RealtimeTransport,
+    pub resume_token: String,
+    pub event_type: String,
+    pub payload_json: String,
+    pub emitted_at: String,
+    pub ack_required: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChatSession {
+    pub session_id: String,
+    pub tenant_id: String,
+    pub audience: ChatAudience,
+    pub shared_auth_subject: String,
+    pub allowed_search_scopes: Vec<String>,
+    pub opened_at: String,
+    pub expires_at: String,
+}
+
 /// Persistence boundary implemented by the API service, never by this crate.
 pub trait AlarmRepository: Send + Sync {
     type Error: Send + Sync + 'static;
@@ -343,8 +636,47 @@ pub trait SyncTransport: Send + Sync {
     ) -> impl Future<Output = Result<SyncEnvelope, Self::Error>> + Send;
 }
 
+/// Tenant-scoped briefing persistence and retrieval boundary.
+pub trait BriefingRepository: Send + Sync {
+    type Error: Send + Sync + 'static;
+
+    fn latest(
+        &self,
+        account: &AccountContext,
+    ) -> impl Future<Output = Result<Option<MorningBriefing>, Self::Error>> + Send;
+}
+
+/// Classifier boundary. The implementation may inspect the encrypted content
+/// under a short-lived, audited grant; consumers receive only the decision.
+pub trait MessageUsefulnessClassifier: Send + Sync {
+    type Error: Send + Sync + 'static;
+
+    fn classify(
+        &self,
+        account: &AccountContext,
+        candidate: SourceItemCandidate,
+    ) -> impl Future<Output = Result<UsefulnessDecision, Self::Error>> + Send;
+}
+
+/// Realtime delivery boundary shared by WebSocket, persistent TLS/TCP, and
+/// NATS implementations. Implementations must preserve sequence and tenant.
+pub trait BriefingRealtimeTransport: Send + Sync {
+    type Error: Send + Sync + 'static;
+
+    fn publish(
+        &self,
+        event: RealtimeEnvelope,
+    ) -> impl Future<Output = Result<(), Self::Error>> + Send;
+}
+
 // ---------------------------------------------------------------------------
-// Morning dashboard contracts.
+// Morning dashboard composition contracts.
+//
+// `MorningBriefing` above is the delivery representation: the cards a client
+// renders, with their usefulness decisions and safe deep links. The types below
+// are the layer beneath it — the domains a briefing is composed FROM, and the
+// composition trace that records what each contributed. There is deliberately
+// one delivery shape and one composition shape, not two briefings.
 //
 // These types mirror the schemas of the same name. Two invariants run through
 // all of them and are the reason several fields exist at all.
@@ -1351,7 +1683,7 @@ pub struct EnvironmentBrief {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum BriefingSectionKind {
+pub enum CompositionSectionKind {
     Schedule,
     Tasks,
     Habits,
@@ -1372,7 +1704,7 @@ pub enum BriefingSectionKind {
 /// reads to the owner as a brief with nothing to say.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum BriefingSectionState {
+pub enum CompositionSectionState {
     Ready,
     Empty,
     Degraded,
@@ -1416,7 +1748,7 @@ pub struct SectionProvenance {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct BriefingItem {
+pub struct CompositionItem {
     pub id: String,
     pub rank: u16,
     pub headline: String,
@@ -1429,14 +1761,14 @@ pub struct BriefingItem {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct BriefingSection {
-    pub kind: BriefingSectionKind,
+pub struct CompositionSection {
+    pub kind: CompositionSectionKind,
     pub rank: u8,
-    pub state: BriefingSectionState,
+    pub state: CompositionSectionState,
     /// Present for every state, including the states that carry no items, so a
     /// gap is still legible.
     pub summary: String,
-    pub items: Vec<BriefingItem>,
+    pub items: Vec<CompositionItem>,
     pub provenance: Vec<SectionProvenance>,
     /// Required whenever `state` is not `Ready`.
     pub state_detail: Option<String>,
@@ -1444,7 +1776,7 @@ pub struct BriefingSection {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct Briefing {
+pub struct BriefingComposition {
     pub id: String,
     pub schema: String,
     pub for_day: String,
@@ -1452,17 +1784,17 @@ pub struct Briefing {
     pub generated_at: String,
     pub delivered_at: Option<String>,
     pub headline: String,
-    pub sections: Vec<BriefingSection>,
+    pub sections: Vec<CompositionSection>,
     /// Sections the owner switched off, listed rather than omitted so the brief
     /// can distinguish "you turned this off" from "this broke".
-    pub sections_withheld: Vec<BriefingSectionKind>,
+    pub sections_withheld: Vec<CompositionSectionKind>,
     pub generation: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum DashboardModule {
-    Briefing,
+    BriefingComposition,
     Schedule,
     DayPlan,
     Tasks,
@@ -1573,11 +1905,11 @@ pub trait DashboardRepository: Send + Sync {
         connection_id: &str,
     ) -> impl Future<Output = Result<(), Self::Error>> + Send;
 
-    fn get_briefing(
+    fn get_briefing_composition(
         &self,
         owner_id: &str,
         day: &str,
-    ) -> impl Future<Output = Result<Option<Briefing>, Self::Error>> + Send;
+    ) -> impl Future<Output = Result<Option<BriefingComposition>, Self::Error>> + Send;
 
     fn get_day_plan(
         &self,

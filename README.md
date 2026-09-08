@@ -155,6 +155,19 @@ nothing else forces the two spellings to agree.
   `declarative-migrations/declarative-postgres-migrate.rs`; routine CI never
   applies destructive changes.
 
+The declarative `sql/schema.sql` is the reviewed storage intersection of the
+independent TypeSpec and JSON Schema authorities. `sql/peer-source-map.json`
+makes every model-to-table mapping executable in validation, while
+`sql/postgres-rls.sql` is the PostgreSQL/Supabase tenant-policy overlay. A
+request transaction sets `app.tenant_id` and `app.subject_id` only after Shared
+Auth verification; absent settings match no row.
+
+Morning-intelligence storage contains hashes, encrypted content references,
+bounded classifier evidence, expiring provider-supported deep links, briefings,
+1–4100-dimensional vectors, non-causal correlations, and Ores Chat session
+references. It contains neither provider credentials nor plaintext message
+bodies.
+
 ## Validate
 
 ```sh

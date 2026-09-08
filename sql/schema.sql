@@ -389,3 +389,215 @@ CREATE TABLE IF NOT EXISTS happy_wakey_vip_senders (
   CONSTRAINT happy_wakey_vip_generation CHECK (generation >= 0),
   UNIQUE (owner_id, sender_domain)
 );
+
+-- Feedless morning intelligence persistence. This is the reviewed storage
+-- intersection of the independent TypeSpec and JSON Schema authorities.
+-- Plaintext provider content and provider credentials never enter this schema.
+
+CREATE TABLE IF NOT EXISTS happy_wakey_tenants (
+  id TEXT PRIMARY KEY,
+  account_kind TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  seat_limit INT4 NOT NULL DEFAULT 1,
+  policy_version TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_tenant_kind CHECK (account_kind IN ('individual','organization')),
+  CONSTRAINT happy_wakey_tenant_seats CHECK (seat_limit >= 1 AND seat_limit <= 100000)
+);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_tenant_memberships (
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'active',
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_membership_role CHECK (role IN ('member','manager','org_admin','owner')),
+  CONSTRAINT happy_wakey_membership_state CHECK (state IN ('invited','active','suspended','revoked')),
+  PRIMARY KEY (tenant_id, subject_id)
+);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_connector_consents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  connector TEXT NOT NULL,
+  state TEXT NOT NULL,
+  scopes JSONB NOT NULL DEFAULT '[]'::JSONB,
+  source_account_ref TEXT NOT NULL,
+  credential_ref TEXT NULL,
+  granted_at TIMESTAMPTZ NULL,
+  expires_at TIMESTAMPTZ NULL,
+  revoked_at TIMESTAMPTZ NULL,
+  policy_version TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_connector_kind CHECK (connector IN ('email','whatsapp','linkedin','x_dm','slack','teams','calendar','weather','flights','markets','crm')),
+  CONSTRAINT happy_wakey_consent_state CHECK (state IN ('pending','granted','revoked','expired')),
+  CONSTRAINT happy_wakey_consent_lifecycle CHECK (
+    (state = 'granted' AND granted_at IS NOT NULL AND revoked_at IS NULL)
+    OR (state = 'revoked' AND revoked_at IS NOT NULL)
+    OR state IN ('pending','expired')
+  ),
+  UNIQUE (tenant_id, subject_id, connector, source_account_ref)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_connector_consents_scope
+  ON happy_wakey_connector_consents (tenant_id, subject_id, state, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_source_item_candidates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  consent_id UUID NOT NULL REFERENCES happy_wakey_connector_consents(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  source_item_ref TEXT NOT NULL,
+  sender_class TEXT NOT NULL,
+  received_at TIMESTAMPTZ NOT NULL,
+  thread_ref TEXT NOT NULL,
+  encrypted_content_ref TEXT NOT NULL,
+  content_sha256 TEXT NOT NULL,
+  has_direct_reply_request BOOL NOT NULL DEFAULT false,
+  due_at TIMESTAMPTZ NULL,
+  retention_expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_candidate_provider CHECK (provider IN ('email','whatsapp','linkedin','x_dm','slack','teams')),
+  CONSTRAINT happy_wakey_candidate_sender CHECK (sender_class IN ('vip','known','unknown')),
+  CONSTRAINT happy_wakey_candidate_hash CHECK (char_length(content_sha256) = 64 AND content_sha256 = lower(content_sha256)),
+  CONSTRAINT happy_wakey_candidate_retention CHECK (retention_expires_at > received_at),
+  UNIQUE (tenant_id, subject_id, provider, source_item_ref)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_candidates_pending
+  ON happy_wakey_source_item_candidates (tenant_id, subject_id, received_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_usefulness_decisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  source_item_id UUID NOT NULL REFERENCES happy_wakey_source_item_candidates(id) ON DELETE CASCADE,
+  model TEXT NOT NULL,
+  policy_version TEXT NOT NULL,
+  content_sha256 TEXT NOT NULL,
+  score DECIMAL(5,4) NOT NULL,
+  designated_useful BOOL NOT NULL,
+  reasons JSONB NOT NULL DEFAULT '[]'::JSONB,
+  rationale TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  evaluated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_usefulness_score CHECK (score >= 0 AND score <= 1),
+  CONSTRAINT happy_wakey_usefulness_threshold CHECK (NOT designated_useful OR score >= 0.8),
+  CONSTRAINT happy_wakey_usefulness_hash CHECK (char_length(content_sha256) = 64 AND content_sha256 = lower(content_sha256)),
+  UNIQUE (tenant_id, subject_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_usefulness_rank
+  ON happy_wakey_usefulness_decisions (tenant_id, subject_id, designated_useful, score DESC, evaluated_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_safe_deep_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  source_item_id UUID NOT NULL REFERENCES happy_wakey_source_item_candidates(id) ON DELETE CASCADE,
+  decision_id UUID NOT NULL REFERENCES happy_wakey_usefulness_decisions(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  target_url TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  requires_reauthentication BOOL NOT NULL DEFAULT true,
+  feed_fallback_allowed BOOL NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_deep_link_https CHECK (target_url LIKE 'https://%'),
+  CONSTRAINT happy_wakey_deep_link_no_feed CHECK (feed_fallback_allowed = false),
+  CONSTRAINT happy_wakey_deep_link_expiry CHECK (expires_at > created_at),
+  UNIQUE (tenant_id, subject_id, source_item_id, decision_id)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_safe_links_active
+  ON happy_wakey_safe_deep_links (tenant_id, subject_id, expires_at);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_morning_briefings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  local_date DATE NOT NULL,
+  time_zone TEXT NOT NULL,
+  title TEXT NOT NULL,
+  cards JSONB NOT NULL DEFAULT '[]'::JSONB,
+  card_count INT4 NOT NULL DEFAULT 0,
+  suppressed_item_count INT4 NOT NULL DEFAULT 0,
+  audio_url TEXT NULL,
+  audio_duration_seconds INT4 NULL,
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  valid_until TIMESTAMPTZ NOT NULL,
+  CONSTRAINT happy_wakey_briefing_card_count CHECK (card_count >= 0 AND card_count <= 64),
+  CONSTRAINT happy_wakey_briefing_suppressed CHECK (suppressed_item_count >= 0),
+  CONSTRAINT happy_wakey_briefing_audio CHECK ((audio_url IS NULL AND audio_duration_seconds IS NULL) OR (audio_url LIKE 'https://%' AND audio_duration_seconds BETWEEN 0 AND 3600)),
+  CONSTRAINT happy_wakey_briefing_validity CHECK (valid_until > generated_at),
+  UNIQUE (tenant_id, subject_id, local_date)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_briefings_subject_day
+  ON happy_wakey_morning_briefings (tenant_id, subject_id, local_date DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_embeddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  model TEXT NOT NULL,
+  content_hash TEXT NOT NULL,
+  dimensions INT4 NOT NULL,
+  embedding REAL[] NOT NULL,
+  retention_class TEXT NOT NULL DEFAULT 'ephemeral',
+  idempotency_key TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_embedding_dimensions CHECK (dimensions BETWEEN 1 AND 4100 AND cardinality(embedding) = dimensions),
+  CONSTRAINT happy_wakey_embedding_hash CHECK (char_length(content_hash) = 64 AND content_hash = lower(content_hash)),
+  CONSTRAINT happy_wakey_embedding_retention CHECK (retention_class IN ('ephemeral','standard','legal_hold')),
+  UNIQUE (tenant_id, subject_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_embeddings_resource
+  ON happy_wakey_embeddings (tenant_id, subject_id, resource_type, resource_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_correlation_findings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  metric_a TEXT NOT NULL,
+  metric_b TEXT NOT NULL,
+  coefficient DECIMAL(8,7) NOT NULL,
+  p_value DECIMAL(8,7) NOT NULL,
+  confidence_low DECIMAL(8,7) NOT NULL,
+  confidence_high DECIMAL(8,7) NOT NULL,
+  sample_size INT4 NOT NULL,
+  correction TEXT NOT NULL,
+  causal_claim_allowed BOOL NOT NULL DEFAULT false,
+  discovered_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  CONSTRAINT happy_wakey_correlation_coefficient CHECK (coefficient BETWEEN -1 AND 1),
+  CONSTRAINT happy_wakey_correlation_probability CHECK (p_value BETWEEN 0 AND 1),
+  CONSTRAINT happy_wakey_correlation_confidence CHECK (confidence_low <= coefficient AND coefficient <= confidence_high),
+  CONSTRAINT happy_wakey_correlation_sample CHECK (sample_size >= 3),
+  CONSTRAINT happy_wakey_correlation_correction CHECK (correction IN ('none','bonferroni','benjamini_hochberg')),
+  CONSTRAINT happy_wakey_correlation_noncausal CHECK (causal_claim_allowed = false)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_correlations_subject
+  ON happy_wakey_correlation_findings (tenant_id, subject_id, discovered_at DESC);
+
+CREATE TABLE IF NOT EXISTS happy_wakey_chat_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id TEXT NOT NULL REFERENCES happy_wakey_tenants(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  audience TEXT NOT NULL,
+  allowed_search_scopes JSONB NOT NULL DEFAULT '[]'::JSONB,
+  ores_chat_session_ref TEXT NOT NULL,
+  opened_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  closed_at TIMESTAMPTZ NULL,
+  CONSTRAINT happy_wakey_chat_audience CHECK (audience IN ('sales_visitor','customer_support','organization_admin','internal_operator','owner')),
+  CONSTRAINT happy_wakey_chat_expiry CHECK (expires_at > opened_at)
+);
+
+CREATE INDEX IF NOT EXISTS happy_wakey_chat_sessions_active
+  ON happy_wakey_chat_sessions (tenant_id, subject_id, expires_at);

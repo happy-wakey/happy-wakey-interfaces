@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "happy-wakey.sql-peer-source-map.v1",
+  "authorities": ["typespec/main.tsp", "schemas/morning-briefing.schema.json"],
+  "mode": "reviewed-intersection",
+  "models": {
+    "OnboardingIntent": ["happy_wakey_tenants", "happy_wakey_tenant_memberships"],
+    "ConnectorConsent": ["happy_wakey_connector_consents"],
+    "SourceItemCandidate": ["happy_wakey_source_item_candidates"],
+    "UsefulnessDecision": ["happy_wakey_usefulness_decisions"],
+    "SafeDeepLink": ["happy_wakey_safe_deep_links"],
+    "MorningBriefing": ["happy_wakey_morning_briefings"],
+    "EmbeddingDescriptor": ["happy_wakey_embeddings"],
+    "CorrelationFinding": ["happy_wakey_correlation_findings"],
+    "ChatSession": ["happy_wakey_chat_sessions"]
+  },
+  "postgresPolicyOverlay": "sql/postgres-rls.sql",
+  "generatedBy": "scripts/validate_contracts.py"
+}

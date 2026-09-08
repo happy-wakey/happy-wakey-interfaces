@@ -251,6 +251,16 @@ for required in (
     "happy_wakey_module_layouts",
     "happy_wakey_watchlist_symbols",
     "happy_wakey_vip_senders",
+    "happy_wakey_tenants",
+    "happy_wakey_tenant_memberships",
+    "happy_wakey_connector_consents",
+    "happy_wakey_source_item_candidates",
+    "happy_wakey_usefulness_decisions",
+    "happy_wakey_safe_deep_links",
+    "happy_wakey_morning_briefings",
+    "happy_wakey_embeddings",
+    "happy_wakey_correlation_findings",
+    "happy_wakey_chat_sessions",
 ):
     assert required in sql, f"missing table in declarative SQL: {required}"
 
@@ -263,9 +273,30 @@ executable_sql = "\n".join(
 for forbidden in ("access_token", "refresh_token", "client_secret", "api_key", "password", "bearer"):
     assert forbidden not in executable_sql, f"credential column leaked into declarative SQL: {forbidden}"
 
+source_map = load(ROOT / "sql/peer-source-map.json")
+assert source_map["mode"] == "reviewed-intersection"
+assert set(source_map["models"]) <= peer_models
+for model, tables in source_map["models"].items():
+    assert model in type_spec_models and model in briefing_schema["$defs"]
+    for table in tables:
+        assert f"CREATE TABLE IF NOT EXISTS {table}" in sql
+
+rls = (ROOT / "sql/postgres-rls.sql").read_text(encoding="utf-8")
+tenant_tables = {table for tables in source_map["models"].values() for table in tables}
+for table in tenant_tables:
+    assert f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY" in rls
+assert "current_setting('app.tenant_id', true)" in rls
+assert "current_setting('app.subject_id', true)" in rls
+assert "BYPASSRLS" not in rls.upper()
+
+assert "designated_useful OR score >= 0.8" in sql
+assert "feed_fallback_allowed = false" in sql
+assert "dimensions BETWEEN 1 AND 4100" in sql
+assert "causal_claim_allowed = false" in sql
+
 print(
     f"validated {len(schema_docs)} Draft 2020-12 schemas, {len(fixtures)} fixtures, "
     f"10 fail-closed counter-examples, {len(operation_ids)} operations, "
     f"{len(peer_models)} peer-source briefing models, generated validators, "
-    "Protobuf, and declarative SQL"
+    "Protobuf, peer-source SQL mapping, PostgreSQL RLS, and declarative SQL"
 )

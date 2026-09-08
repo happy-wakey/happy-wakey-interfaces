@@ -1,5 +1,7 @@
 /target/
 /node_modules/
+tmp/
+temp/
 /.zed/
 /.zpkg-pack/
 *.log

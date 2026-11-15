@@ -22,8 +22,8 @@ def snake_case(identifier: str) -> str:
 
 def extract_atto_enums(text: str) -> dict[str, list[str]]:
     # Anchored declarations: a comment mentioning a variant is never an admission.
-    pattern = re.compile(r"^define enum ([A-Za-z][A-Za-z0-9_]*) as\\s*$"
-                         r"(.*?)^end\\s*$", re.M | re.S)
+    pattern = re.compile(r"^define enum ([A-Za-z][A-Za-z0-9_]*) as\s*$"
+                         r"(.*?)^end\s*$", re.M | re.S)
     enums = {}
     for match in pattern.finditer(text):
         name = match.group(1)
@@ -46,7 +46,7 @@ def extract_atto_enums(text: str) -> dict[str, list[str]]:
 def extract_rust_enums(text: str) -> dict[str, list[str]]:
     enums = {}
     for name in EXPECTED:
-        pattern = rf"pub enum {name}\\s*\\{{([^{{}}]*)\\}}"
+        pattern = rf"pub enum {name}\s*\{{([^{{}}]*)\}}"
         match = re.search(pattern, text)
         if match is None:
             raise ValueError(f"missing Rust enum: {name}")
@@ -85,12 +85,12 @@ class AttoProjectionTest(unittest.TestCase):
 
     def test_missing_variant_fails_closed(self):
         with self.assertRaises(ValueError):
-            validate_projection(self.atto.replace("    MarkMissed\\n", ""), self.rust, self.schema)
+            validate_projection(self.atto.replace("    MarkMissed\n", ""), self.rust, self.schema)
 
     def test_duplicate_variant_fails_closed(self):
         with self.assertRaises(ValueError):
-            validate_projection(self.atto.replace("    MarkMissed\\n",
-                                                  "    MarkMissed\\n    MarkMissed\\n"),
+            validate_projection(self.atto.replace("    MarkMissed\n",
+                                                  "    MarkMissed\n    MarkMissed\n"),
                                 self.rust, self.schema)
 
     def test_schema_drift_fails_closed(self):

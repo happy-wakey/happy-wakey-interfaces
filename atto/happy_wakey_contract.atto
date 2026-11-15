@@ -1,6 +1,6 @@
 // AttoLang contract declarations: names mirror JSON Schema and Rust authority.
 // Wire serialization, JSON validation and transport are NOT implemented here.
-// The lower_snake_case wire spellings are verified by tests/test_atto_contract.py.
+// The lower_snake_case wire spellings are checked by tests/atto_contract.rs.
 define enum AlarmOccurrenceState as
     Scheduled
     Firing

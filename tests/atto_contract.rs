@@ -198,8 +198,7 @@ fn schema_id_literal<'a>(source: &'a str, name: &str) -> Option<&'a str> {
 #[test]
 fn atto_schema_ids_match_authoritative_json_ids() {
     let (atto, _, occurrence) = fixtures();
-    let alarm: Value =
-        serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
+    let alarm: Value = serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
     assert_eq!(
         schema_id_literal(&atto, "occurrence_schema_id"),
         occurrence["$id"].as_str()
@@ -230,8 +229,7 @@ fn rejects_dynamic_duplicate_or_mutated_schema_ids() {
         ),
         None
     );
-    let alarm: Value =
-        serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
+    let alarm: Value = serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
     assert_ne!(
         schema_id_literal(
             &atto.replace("alarm.schema.json", "alarm-v2.schema.json"),

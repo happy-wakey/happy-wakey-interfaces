@@ -178,3 +178,65 @@ fn rejects_extra_duplicate_and_unterminated_enums() {
     .is_err());
     assert!(verify(&a.replace("    Rejected\nend", "    Rejected"), &r, &j).is_err());
 }
+
+fn schema_id_literal<'a>(source: &'a str, name: &str) -> Option<&'a str> {
+    let signature = format!("pub fnc {name}(): string {{");
+    let mut matches = source.match_indices(&signature);
+    let (index, _) = matches.next()?;
+    if matches.next().is_some() {
+        return None;
+    }
+    let remaining = &source[index + signature.len()..];
+    let (body, _) = remaining.split_once('}')?;
+    let value = body.trim().strip_prefix("return \"")?.strip_suffix("\";")?;
+    if value.contains('"') || value.contains('\\') {
+        return None;
+    }
+    Some(value)
+}
+
+#[test]
+fn atto_schema_ids_match_authoritative_json_ids() {
+    let (atto, _, occurrence) = fixtures();
+    let alarm: Value =
+        serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
+    assert_eq!(
+        schema_id_literal(&atto, "occurrence_schema_id"),
+        occurrence["$id"].as_str()
+    );
+    assert_eq!(
+        schema_id_literal(&atto, "alarm_schema_id"),
+        alarm["$id"].as_str()
+    );
+}
+
+#[test]
+fn rejects_dynamic_duplicate_or_mutated_schema_ids() {
+    let (atto, _, _) = fixtures();
+    assert_eq!(
+        schema_id_literal(
+            &atto.replace(
+                "return \"https://schemas.happy-wakey.dev/alarm.schema.json\";",
+                "return external_url();"
+            ),
+            "alarm_schema_id"
+        ),
+        None
+    );
+    assert_eq!(
+        schema_id_literal(
+            &format!("{atto}\npub fnc alarm_schema_id(): string {{ return \"unsafe\"; }}"),
+            "alarm_schema_id"
+        ),
+        None
+    );
+    let alarm: Value =
+        serde_json::from_str(include_str!("../schemas/alarm.schema.json")).unwrap();
+    assert_ne!(
+        schema_id_literal(
+            &atto.replace("alarm.schema.json", "alarm-v2.schema.json"),
+            "alarm_schema_id"
+        ),
+        alarm["$id"].as_str()
+    );
+}

@@ -1,0 +1,35 @@
+// AttoLang contract declarations: names mirror JSON Schema and Rust authority.
+// Wire serialization, JSON validation and transport are NOT implemented here.
+// The lower_snake_case wire spellings are checked by tests/atto_contract.rs.
+define enum AlarmOccurrenceState as
+    Scheduled
+    Firing
+    Acknowledged
+    Snoozed
+    Completed
+    Missed
+    Canceled
+end
+
+define enum AlarmTransitionEvent as
+    Fire
+    Acknowledge
+    Snooze
+    Complete
+    MarkMissed
+    Cancel
+end
+
+define enum TransitionDisposition as
+    Applied
+    Stale
+    Rejected
+end
+
+pub fnc occurrence_schema_id(): string {
+    return "https://schemas.happy-wakey.dev/alarm-occurrence.schema.json";
+}
+
+pub fnc alarm_schema_id(): string {
+    return "https://schemas.happy-wakey.dev/alarm.schema.json";
+}

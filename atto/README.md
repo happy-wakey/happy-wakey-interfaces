@@ -13,7 +13,7 @@ and `additionalProperties: false` must be checked at the trust boundary
 before interpreting an Atto value. Do not derive a serializer from enum member
 names without an explicit, tested mapping.
 
-Run `python3 -m unittest discover -s tests -p 'test_*.py'` to verify
+Run `cargo test --test atto_contract --locked` to verify
 the Atto enum projection against JSON Schema and Rust. This is **host-side
 source conformance only**; it does not parse, compile, execute, or serialize
 `.atto` programs. Guest compiler support and cross-backend behavior require

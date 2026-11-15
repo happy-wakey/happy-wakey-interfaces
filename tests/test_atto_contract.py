@@ -32,6 +32,8 @@ def extract_atto_enums(text: str) -> dict[str, list[str]]:
         members = []
         for line in match.group(2).splitlines():
             value = line.strip()
+            if not value:
+                continue
             if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", value):
                 raise ValueError(f"invalid enum member in {name}: {value}")
             if value in members:
